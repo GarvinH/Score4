@@ -58,11 +58,9 @@ class DisplayGrid {
                             g.setColor(Color.YELLOW);
                         else
                             g.setColor(Color.BLUE);
-
-
-                        g.fillRect(k * GridToScreenRatio + i*(world.length-1)*GridToScreenRatio+2, j * GridToScreenRatio-1, GridToScreenRatio, GridToScreenRatio+1);
+                        g.fillRect(k * GridToScreenRatio + i*(world.length-1)*2*GridToScreenRatio+2, j * GridToScreenRatio-1, GridToScreenRatio, GridToScreenRatio);
                         g.setColor(Color.BLACK);
-                        g.drawRect(k * GridToScreenRatio + i*(world.length-1)*GridToScreenRatio+2, j * GridToScreenRatio-1, GridToScreenRatio, GridToScreenRatio+1);
+                        g.drawRect(k * GridToScreenRatio + i*(world.length-1)*2*GridToScreenRatio+2, j * GridToScreenRatio-1, GridToScreenRatio, GridToScreenRatio);
                     }
                 }
             }
