@@ -46,10 +46,10 @@ class Score4 {
 
             userMove(board);
             //Small delay
-            try {
+            /*try {
                 Thread.sleep(1000);
             } catch (Exception e) {
-            }
+            }*/
             ;
 
 
@@ -63,10 +63,12 @@ class Score4 {
 
     public static void userMove (int board[][][]) {
         String input = JOptionPane.showInputDialog("Please Enter Coordinates");
-        boolean valid = true;
-        boolean placed = false;
+        boolean valid;
+        boolean placed;
         char letter;
         do {
+            valid = true;
+            placed = false;
             if (input == null) {
                 valid = false;
             } else if (!input.contains(",")) {
@@ -88,12 +90,13 @@ class Score4 {
                         coordinates[i] = Integer.parseInt(userInput[i]);
                     }
                     placed = boardUpdate(board, coordinates, 1);
+                    System.out.println(placed);
                 }
             }
             if (!placed) {
                 input = JOptionPane.showInputDialog("Please Enter Valid Point");
             }
-        } while ((!valid) && (!placed));
+        } while ((!valid) || (!placed));
     }
 
     public static boolean boardUpdate(int board[][][], int[] coordinate, int player)  {
@@ -103,15 +106,15 @@ class Score4 {
         coordinate[1] = board.length-coordinate[1]-1;
         if ((coordinate[0] < 0) || (coordinate[1] < 0)) {
             valid = false;
-        } else if ((coordinate[0] > board.length-1) || (coordinate[1] > board.length-1)){
+        } else if ((coordinate[0] > board.length) || (coordinate[1] > board.length)){
             valid = false;
         }
-        if (board[board.length-1][coordinate[1]][coordinate[0]] != 0) {
+        /*if (board[board.length-1][coordinate[1]][coordinate[0]] != 0) {
             valid = false;
-        }
+        }*/
         if (valid) {
             while ((!placed) && (level < 4)) {
-                if (board[level][coordinate[1]][coordinate[0]] == 0) {
+                if ((board[level][coordinate[1]][coordinate[0]] == 0)&& (level < board.length)) {
                     if (player == 1) {
                         board[level][coordinate[1]][coordinate[0]] = 1;
                         placed = true;
