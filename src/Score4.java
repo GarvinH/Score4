@@ -10,6 +10,15 @@ class Score4 {
         String boardSizeInput = JOptionPane.showInputDialog("Please enter the board size:");
         int boardSize = Integer.parseInt(boardSizeInput);
 
+        int playerTurn;//-1 will be AI turn and 1 will be player turn.
+        Object[] options = {"Player", "Computer"};
+        playerTurn = JOptionPane.showOptionDialog(null, "Choose who goes first.", "Choose player turn", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+        if (playerTurn == 0) {
+            playerTurn = 1;
+        } else {
+            playerTurn = -1;
+        }
+
         int board[][][] = new int[boardSize][boardSize][boardSize];
 
         for (int i = 0; i < boardSize; i++) {
@@ -28,12 +37,14 @@ class Score4 {
 
         //Set up Grid Panel
         DisplayGrid grid = new DisplayGrid(board);
+        String[] userInput;
+        int[] userCoordinate = new int[2];
 
         while (true) {
             //Display the grid on a Panel
             grid.refresh();
 
-
+            userMove(board);
             //Small delay
             try {
                 Thread.sleep(1000);
@@ -50,6 +61,71 @@ class Score4 {
         }
     }
 
+    public static void userMove (int board[][][]) {
+        String input = JOptionPane.showInputDialog("Please Enter Coordinates");
+        boolean valid = true;
+        boolean placed = false;
+        char letter;
+        do {
+            if (input == null) {
+                valid = false;
+            } else if (!input.contains(",")) {
+                valid = false;
+            }
+            if (valid) {
+                String[] userInput = input.split(",");
+                for (int i = 0; i < 2; i++) {
+                    for (int k = 0; k < userInput[i].length(); k++) {
+                        letter = userInput[i].charAt(k);
+                        if ((letter < '0') || (letter > '9')) {
+                            valid = false;
+                        }
+                    }
+                }
+                if (valid) {
+                    int[] coordinates = new int[2];
+                    for (int i = 0; i < 2; i++) {
+                        coordinates[i] = Integer.parseInt(userInput[i]);
+                    }
+                    placed = boardUpdate(board, coordinates, 1);
+                }
+            }
+            if (!placed) {
+                input = JOptionPane.showInputDialog("Please Enter Valid Point");
+            }
+        } while ((!valid) && (!placed));
+    }
+
+    public static boolean boardUpdate(int board[][][], int[] coordinate, int player)  {
+        boolean placed = false;
+        int level = 0;
+        boolean valid = true;
+        coordinate[1] = board.length-coordinate[1]-1;
+        if ((coordinate[0] < 0) || (coordinate[1] < 0)) {
+            valid = false;
+        } else if ((coordinate[0] > board.length-1) || (coordinate[1] > board.length-1)){
+            valid = false;
+        }
+        if (board[board.length-1][coordinate[1]][coordinate[0]] != 0) {
+            valid = false;
+        }
+        if (valid) {
+            while ((!placed) && (level < 4)) {
+                if (board[level][coordinate[1]][coordinate[0]] == 0) {
+                    if (player == 1) {
+                        board[level][coordinate[1]][coordinate[0]] = 1;
+                        placed = true;
+                    } else {
+                        board[level][coordinate[1]][coordinate[0]] = -1;
+                        placed = true;
+                    }
+                } else {
+                    level++;
+                }
+            }
+        }
+        return placed;
+    }
     //method to display grid a text for debugging
     public static void DisplayGridOnConsole(String[][] map) {
         for(int i = 0; i<map.length;i++){
@@ -59,9 +135,9 @@ class Score4 {
         }
     }
 
-    // loop through the grid
-    static void randomMove(int[][][] grid) {
+    static int[] randomMove(int[][][] grid) {
         Random rand = new Random();
+        int[] coordinate = new int[2];
         int randX;
         int randY;
         boolean floorClear = false;
@@ -79,26 +155,27 @@ class Score4 {
                 //System.out.println("");
             }
             while (!played && floorClear) {
-                randX = rand.nextInt(4);
-                randY = rand.nextInt(4);
+                randX = rand.nextInt(grid.length);
+                randY = rand.nextInt(grid.length);
                 if (grid[i][randX][randY] == 0) {
-                    grid[i][randX][randY] = 1;
-                    played = true;
+                    coordinate[0] = randX;
+                    coordinate[1] = randY;
+                    //return coordinate;
                 }
             }
             //System.out.println("");
         }
-
+        return coordinate;
     }
     static void findValues(int[][][] grid) {
 
 
     }
 
-    // find the number of combinations that player B has and number of combinations that player A has
+    // record the number of possibilities to win
     // alternate between player A and B (A prefers highest, B prefers lowest)
     // return the optimal move
-    static void turn (int[][][] grid, int , int gridIndex, int ) {
+    static void turn (int[][][] grid, int currentPlayer, int[] gridIndex, int score) {
 
 
     }
@@ -110,42 +187,58 @@ class Score4 {
     // go through diagonally on each separate individual plane
     // ex. [0][0][0] == [1][1][1] or [0][0][0] == [1][0][1] or [0][0][0] == [0][1][1]
     static int win(int[][][] grid) {
-        int checkC = 0, checkH = 0, checkR = 0, checkDiag = 0,
-                checkDiagRowUp = 0, checkDiagColUp = 0,
-                checkDiagRowDown = 0, checkDiagColDown = 0,
-                checkFloorsUp = 0, checkFloorsDown = 0, checkWin = 0;
+        int checkC, checkH, checkR, checkDiag,
+                checkDiagRowUp, checkDiagColUp,
+                checkDiagRowDown, checkDiagColDown,
+                checkFloorsUp, checkFloorsDown, checkWin;
         for (int i = 0; i < grid.length; i++) {
             for (int j = 0; j < grid.length; j++) {
                 for (int k = 0; k < grid.length; k++) {
-                    if ((grid.length-j) >= 3) {
-                        checkR = winCheck(grid, j, k, i, 0, 0);
-                        checkDiagRowUp = winCheck(grid, j, k, i, 0, 4);
-                    }
-                    if ((grid.length-k) >= 3) {
-                        checkC = winCheck(grid, j, k, i, 0, 1);
-                        checkDiagColUp = winCheck(grid, j, k, i, 0, 5);
-                    }
+                    checkR = winCheck(grid, j, k, i, 0, 0);
+                    checkC = winCheck(grid, j, k, i, 0, 1);
+                    checkH = winCheck(grid, j, k, i, 0, 2);
                     checkDiag = winCheck(grid, j, k, i, 0, 3);
-                    if ((grid.length-i) >= 3) {
-                        checkH = winCheck(grid, j, k, i, 0, 2);
-                        checkFloorsUp = winCheck(grid, j, k, i, 0, 6);
+                    checkDiagRowUp = winCheck(grid, j, k, i, 0, 4);
+                    checkDiagColUp = winCheck(grid, j, k, i, 0, 5);
+                    checkFloorsUp = winCheck(grid, j, k, i, 0, 6);
+
+                    if((checkR == 1) || (checkR == -1)) {
+                        return checkR;
                     }
+                    if((checkC == 1) || (checkC == -1)) {
+                        return checkC;
+                    }
+                    if((checkH == 1) || (checkH == -1)) {
+                        return checkH;
+                    }
+                    if((checkDiag == 1) || (checkDiag == -1)) {
+                        return checkDiag;
+                    }
+                    if((checkFloorsUp == 1) || (checkFloorsUp == -1)) {
+                        return checkFloorsUp;
+                    }
+                    if((checkDiagRowUp == 1) || (checkDiagRowUp == -1)) {
+                        return checkDiagRowUp;
+                    }
+                    if((checkDiagColUp == 1) || (checkDiagColUp == -1)) {
+                        return checkDiagColUp;
+                    }
+                    if (i >= 3) {
 
-
-
-
-
-                    if (i >=3 ) {
                         checkDiagRowDown = winCheckDown(grid, j, k, i, 0, 0);
                         checkDiagColDown = winCheckDown(grid, j, k, i, 0, 1);
                         checkFloorsDown = winCheckDown(grid, j, k, i, 0, 2);
+                        if ((checkFloorsDown == 1) || (checkFloorsDown == -1)) {
+                            return checkFloorsDown;
+                        }
+                        if ((checkDiagColDown == 1) || (checkDiagColDown == -1)) {
+                            return checkDiagColDown;
+                        }
+                        if ((checkDiagRowDown == 1) || (checkDiagRowDown == -1)) {
+                            return checkDiagRowDown;
+                        }
                     }
-
-                    checkWin = checkR + checkC + checkH + checkDiag + checkFloorsUp + checkDiagRowUp +
-                            checkDiagColUp + checkDiagRowDown + checkDiagColDown + checkFloorsDown;
-                    if ((checkWin==1) || (checkWin ==-1)) {
-                        return checkWin;
-                    }
+                    //checkWin = checkR + checkC +
 
                 }
             }
@@ -167,7 +260,6 @@ class Score4 {
      * @return
      */
     static int winCheck(int[][][] grid, int row, int column, int height, int target, int type) {
-
         if ((target == 6) || (target == -6)) {
             return target/4;
         }
@@ -236,38 +328,36 @@ class Score4 {
      * @param height
      * @param target
      * @param type
-     * @return the result if player 1 or player 2 wins
+     * @return
      */
     static int winCheckDown(int[][][] grid, int row, int column, int height, int target, int type) {
-
+        System.out.println(target);
         if ((target == 6) || (target == -6)) {
             return target/4;
         }
-        if ((row == grid.length-1) || (column == grid.length-1) || (height == 0)) {
+        if ((row == 0) || (column == 0) || (height == 0)) {
             return 0;
         }
-
         //check diagonally downwards on same row
-        if ((grid[height][row][column] == grid[height-1][row][column+1]) && (grid[height][row][column] != 0)
+        if ((grid[height][row][column] == grid[height-1][row][column-1]) && (grid[height][row][column] != 0)
                 && (type == 0)) {
-
-            return (winCheckDown(grid, row, column+1, height-1,
-                    target+grid[height][row][column]+grid[height-1][row][column+1], 0) +
-                    winCheckDown(grid, row, column+1, height-1, target, 0));
+            return (winCheck(grid, row, column-1, height-1,
+                    target+grid[height][row][column]+grid[height-1][row][column-1], 0) +
+                    winCheck(grid, row, column-1, height-1, target, 0));
         }
         //check diagonally downwards on same column
-        if ((grid[height][row][column] == grid[height-1][row+1][column]) && (grid[height][row][column] != 0)
+        if ((grid[height][row][column] == grid[height-1][row-1][column]) && (grid[height][row][column] != 0)
                 && (type == 1)) {
-            return (winCheckDown(grid, row+1, column, height-1,
-                    target+grid[height][row][column]+grid[height-1][row+1][column], 1) +
-                    winCheckDown(grid, row+1, column, height-1, target, 1));
+            return (winCheck(grid, row-1, column, height-1,
+                    target+grid[height][row][column]+grid[height-1][row-1][column], 1) +
+                    winCheck(grid, row-1, column, height-1, target, 1));
         }
         //check diagonally downwards across
-        if ((grid[height][row][column] == grid[height-1][row+1][column+1]) && (grid[height][row][column] != 0)
-                && (type == 2)) {
-            return (winCheckDown(grid, row+1, column+1, height-1,
-                    target+grid[height][row][column]+grid[height-1][row+1][column+1], 2) +
-                    winCheckDown(grid, row+1, column+1, height-1, target, 2));
+        if ((grid[height][row][column] == grid[height-1][row-1][column-1]) && (grid[height][row][column] != 0)
+                && (type == 0)) {
+            return (winCheck(grid, row-1, column-1, height-1,
+                    target+grid[height][row][column]+grid[height-1][row-1][column-1], 2) +
+                    winCheck(grid, row-1, column-1, height-1, target, 2));
         }
         return 0;
     }
