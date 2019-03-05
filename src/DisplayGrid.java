@@ -19,7 +19,7 @@ class DisplayGrid {
 
         maxX = Toolkit.getDefaultToolkit().getScreenSize().width;
         maxY = Toolkit.getDefaultToolkit().getScreenSize().height;
-        GridToScreenRatio = maxY / ((world.length+1)*(world.length));  //ratio to fit in screen as square map
+        GridToScreenRatio = maxY / ((world.length+2)*(world.length/2));  //ratio to fit in screen as square map
 
         System.out.println("Map size: "+world.length+" by "+world[0].length + "\nScreen size: "+ maxX +"x"+maxY+ " Ratio: " + GridToScreenRatio);
 
@@ -58,9 +58,16 @@ class DisplayGrid {
                             g.setColor(Color.YELLOW);
                         else
                             g.setColor(Color.BLUE);
-                        g.fillRect(k * GridToScreenRatio + i*(world.length-1)*2*GridToScreenRatio+2, j * GridToScreenRatio-1, GridToScreenRatio, GridToScreenRatio);
-                        g.setColor(Color.BLACK);
-                        g.drawRect(k * GridToScreenRatio + i*(world.length-1)*2*GridToScreenRatio+2, j * GridToScreenRatio-1, GridToScreenRatio, GridToScreenRatio);
+                        if (i < world.length/2) {
+                            g.fillRect(k * GridToScreenRatio + i * (world.length - 1) * 2 * GridToScreenRatio + 2, j * GridToScreenRatio + GridToScreenRatio, GridToScreenRatio, GridToScreenRatio);
+                            g.setColor(Color.BLACK);
+                            g.drawRect(k * GridToScreenRatio + i * (world.length - 1) * 2 * GridToScreenRatio + 2, j * GridToScreenRatio + GridToScreenRatio, GridToScreenRatio, GridToScreenRatio);
+                            g.drawString("Level " + (i+1), 2 * GridToScreenRatio + i * (world.length - 1) * 2 * GridToScreenRatio + 2, GridToScreenRatio/2);
+                        } else {
+                            g.fillRect(k * GridToScreenRatio + (i-world.length/2) * (world.length - 1) * 2 * GridToScreenRatio + 2, j * GridToScreenRatio - 1 + (world.length+1)*GridToScreenRatio + GridToScreenRatio, GridToScreenRatio, GridToScreenRatio);
+                            g.setColor(Color.BLACK);
+                            g.drawRect(k * GridToScreenRatio + (i-world.length/2) * (world.length - 1) * 2 * GridToScreenRatio + 2, j * GridToScreenRatio - 1 + (world.length+1)*GridToScreenRatio + GridToScreenRatio, GridToScreenRatio, GridToScreenRatio);
+                        }
                     }
                 }
             }

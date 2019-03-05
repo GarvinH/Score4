@@ -1,14 +1,27 @@
-/* [GridTest.java]
- * A program to demonstrate usage of DisplayGrid.java.
- * @author Mangat
+/* [Score4.java]
+ * Score 4 game (3d connect 4). Has AI and player moves
+ * Author: Albert Quon, Garvin Hui
  */
 import javax.swing.*;
 import java.util.Random;
 
 class Score4 {
     public static void main(String[] args) {
+        boolean validSize;
+        int boardSize;
         String boardSizeInput = JOptionPane.showInputDialog("Please enter the board size:");
-        int boardSize = Integer.parseInt(boardSizeInput);
+        do {
+            validSize = true;
+            for (int i = 0; i < boardSizeInput.length(); i++) {
+                if ((boardSizeInput.charAt(i) < '1') || (boardSizeInput.charAt(i) > '9')) {
+                    validSize = false;
+                }
+            }
+            if (!validSize) {
+                boardSizeInput = JOptionPane.showInputDialog("Please enter a valid board size:");
+            }
+        } while (!validSize);
+        boardSize = Integer.parseInt(boardSizeInput);
 
         int playerTurn;//-1 will be AI turn and 1 will be player turn.
         Object[] options = {"Player", "Computer"};
@@ -30,38 +43,21 @@ class Score4 {
             }
         }
 
-        // Initialize Map
-        //moveItemsOnGrid(map);
-
-        // display the fake grid on Console
-        //DisplayGridOnConsole(map);
-
         //Set up Grid Panel
         DisplayGrid grid = new DisplayGrid(board);
         boolean quit = false;
+        boolean won = false;
         while (!quit) {
             //Display the grid on a Panel
             grid.refresh();
             if (playerTurn == 1) {
                 userMove(board);
             } else {
-                int[] test = randomMove(board);
-                System.out.println(test[0] + " " + test[1]);
                 boardUpdate(board, randomMove(board), playerTurn);
             }
 
             playerTurn *= -1;
             numberTurns++;
-            //Small delay
-            /*try {
-                Thread.sleep(1000);
-            } catch (Exception e) {
-            }*/
-            ;
-
-
-            // Initialize Map (Making changes to map)
-            //moveItemsOnGrid(map);
 
             //Display the grid on a Panel
             grid.refresh();
@@ -134,14 +130,6 @@ class Score4 {
             }
         }
         return placed;
-    }
-    //method to display grid a text for debugging
-    public static void DisplayGridOnConsole(String[][] map) {
-        for(int i = 0; i<map.length;i++){
-            for(int j = 0; j<map[0].length;j++)
-                System.out.print(map[i][j]+" ");
-            System.out.println("");
-        }
     }
 
     static int[] randomMove(int[][][] grid) {
