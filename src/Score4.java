@@ -18,6 +18,7 @@ class Score4 {
         } else {
             playerTurn = -1;
         }
+        int numberTurns = 0;
 
         int board[][][] = new int[boardSize][boardSize][boardSize];
 
@@ -37,14 +38,20 @@ class Score4 {
 
         //Set up Grid Panel
         DisplayGrid grid = new DisplayGrid(board);
-        String[] userInput;
-        int[] userCoordinate = new int[2];
-
-        while (true) {
+        boolean quit = false;
+        while (!quit) {
             //Display the grid on a Panel
             grid.refresh();
+            if (playerTurn == 1) {
+                userMove(board);
+            } else {
+                int[] test = randomMove(board);
+                System.out.println(test[0] + " " + test[1]);
+                boardUpdate(board, randomMove(board), playerTurn);
+            }
 
-            userMove(board);
+            playerTurn *= -1;
+            numberTurns++;
             //Small delay
             /*try {
                 Thread.sleep(1000);
@@ -87,10 +94,9 @@ class Score4 {
                 if (valid) {
                     int[] coordinates = new int[2];
                     for (int i = 0; i < 2; i++) {
-                        coordinates[i] = Integer.parseInt(userInput[i]);
+                        coordinates[i] = Integer.parseInt(userInput[i])-1;
                     }
                     placed = boardUpdate(board, coordinates, 1);
-                    System.out.println(placed);
                 }
             }
             if (!placed) {
@@ -113,8 +119,8 @@ class Score4 {
             valid = false;
         }*/
         if (valid) {
-            while ((!placed) && (level < 4)) {
-                if ((board[level][coordinate[1]][coordinate[0]] == 0)&& (level < board.length)) {
+            while ((!placed) && (level < board.length)) {
+                if ((board[level][coordinate[1]][coordinate[0]] == 0)) {
                     if (player == 1) {
                         board[level][coordinate[1]][coordinate[0]] = 1;
                         placed = true;
@@ -163,6 +169,7 @@ class Score4 {
                 if (grid[i][randX][randY] == 0) {
                     coordinate[0] = randX;
                     coordinate[1] = randY;
+                    played = true;
                     //return coordinate;
                 }
             }
