@@ -16,17 +16,17 @@ class Score4 {
         //String boardSizeInput = JOptionPane.showInputDialog("Please enter the board size:");
         //int boardSize = Integer.parseInt(boardSizeInput);
         int[][][] grid = {
-                {       {1,1,0,-1},//floor 1
-                        {1,0,0,-1},
-                        {0,0,0,0},
+                {       {1,-1,0,0},//floor 1
+                        {-1,0,-1,0},
+                        {0,-1,0,0},
                         {0,0,0,0}},
 
-                {       {1,0,0,0},//floor 2
-                        {0,0,0,0},
-                        {0,0,0,0},
+                {       {1,-1,0,0},//floor 2
+                        {1,0,-1,0},
+                        {1,-1,0,0},
                         {0,0,0,0}},
 
-                {       {1,0,0,0},//floor 3
+                {       {0,0,0,0},//floor 3
                         {0,0,0,0},
                         {0,0,0,0},
                         {0,0,0,0}},
@@ -176,41 +176,9 @@ class Score4 {
         return checkWin;
     }
 
-    // loop through the grid
-    static void randomMove(int[][][] grid) {
-        Random rand = new Random();
-        int randX;
-        int randY;
-        boolean floorClear = false;
-        boolean played = false;
-        for (int i = 0; i < grid.length; i++) {
-            //System.out.println("Floor " + (i + 1));
-            for (int j = 0; j < grid.length; j++) {
-                for (int k = 0; k < grid.length; k++) {
-                    if (grid[i][j][k] == 0) {
-                        floorClear = true;
-
-                    }
-                    //System.out.print(grid[i][j][k]);
-                }
-                //System.out.println("");
-            }
-            while (!played && floorClear) {
-                randX = rand.nextInt(4);
-                randY = rand.nextInt(4);
-                if (grid[i][randX][randY] == 0) {
-                    grid[i][randX][randY] = 1;
-                    played = true;
-                }
-            }
-            //System.out.println("");
-        }
-
-    }
-
     /**
-     *
-     * @param grid
+     * Determines the computers move based on the current game state
+     * @param grid Current Game State
      */
     static void turn(int grid[][][]) {
         int size = grid.length;
@@ -259,8 +227,9 @@ class Score4 {
                             }
                             if (bestPlayerMove > Math.abs(bestCompMove)) {
                                 bestValues[i][j][k] = bestPlayerMove;
-                            }
-                            else if (Math.abs(bestCompMove) > bestPlayerMove) {
+                            } else if (Math.abs(bestCompMove) > bestPlayerMove) {
+                                bestValues[i][j][k] = bestCompMove;
+                            } else if (Math.abs(bestCompMove) == bestPlayerMove) {
                                 bestValues[i][j][k] = bestCompMove;
                             }
 
@@ -303,16 +272,16 @@ class Score4 {
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 for (int k = 0; k < size; k++) {
-                    //System.out.print(bestValues[i][j][k]);
+                    System.out.print(bestValues[i][j][k]);
                     if (Math.abs(bestValues[i][j][k]) == Math.abs(bestMove) && !placed) {
                         grid[i][j][k] = -1;
                         placed = true;
                         //System.out.println(i+":"+j+":"+k);
                     }
                 }
-                //System.out.println("");
+                System.out.println("");
             }
-            //System.out.println("");
+            System.out.println("");
         }
 
     }
@@ -329,6 +298,8 @@ class Score4 {
      */
     static int checkCombos(int[][][] grid, int row, int column, int height, int player) {
         int score = 0;
+
+        // checks all directions on the same plane/height
         score += left(grid, row, column, height,0, player);
         score += up(grid, row, column, height,0, player);
         score += right(grid, row, column, height,0, player);
@@ -338,25 +309,30 @@ class Score4 {
         score += upRight(grid, row, column, height,0, player);
         score += downRight(grid, row, column, height,0, player);
 
-        score += above(grid, row, column, height,0, player);
-        score += aboveFront(grid, row, column, height, 0, player);
-        score += aboveFrontLeft(grid, row, column, height,0, player);
-        score += aboveFrontRight(grid, row, column, height,0, player);
-        score += aboveBehind(grid, row, column, height, 0, player);
-        score += aboveBehindLeft(grid, row, column, height,0, player);
-        score += aboveBehindRight(grid, row, column, height,0, player);
-        score += aboveLeft(grid, row, column, height,0, player);
-        score += aboveRight(grid, row, column, height,0, player);
-
-        score += below(grid, row, column, height,0, player);
-        score += belowFront(grid, row, column, height,0, player);
-        score += belowFrontLeft(grid, row, column, height,0, player);
-        score += belowFrontRight(grid, row, column, height,0, player);
-        score += belowBehind(grid, row, column, height,0, player);
-        score += belowBehindLeft(grid, row, column, height,0, player);
-        score += belowBehindRight(grid, row, column, height,0, player);
-        score += belowLeft(grid, row, column, height,0, player);
-        score += belowRight(grid, row, column, height,0, player);
+        //checks all directions above the move
+        if (height < grid.length) {
+            score += above(grid, row, column, height, 0, player);
+            score += aboveFront(grid, row, column, height, 0, player);
+            score += aboveFrontLeft(grid, row, column, height, 0, player);
+            score += aboveFrontRight(grid, row, column, height, 0, player);
+            score += aboveBehind(grid, row, column, height, 0, player);
+            score += aboveBehindLeft(grid, row, column, height, 0, player);
+            score += aboveBehindRight(grid, row, column, height, 0, player);
+            score += aboveLeft(grid, row, column, height, 0, player);
+            score += aboveRight(grid, row, column, height, 0, player);
+        }
+        // checks all directions below a move
+        if (height > 0) {
+            score += below(grid, row, column, height, 0, player);
+            score += belowFront(grid, row, column, height, 0, player);
+            score += belowFrontLeft(grid, row, column, height, 0, player);
+            score += belowFrontRight(grid, row, column, height, 0, player);
+            score += belowBehind(grid, row, column, height, 0, player);
+            score += belowBehindLeft(grid, row, column, height, 0, player);
+            score += belowBehindRight(grid, row, column, height, 0, player);
+            score += belowLeft(grid, row, column, height, 0, player);
+            score += belowRight(grid, row, column, height, 0, player);
+        }
 
         return score;
 
