@@ -1,11 +1,16 @@
 /* [Score4.java]
  * Score 4 game (3d Connect 4). Has AI and player moves.
- * Author: Albert Quon, Garvin Hui
+ * @author Albert Quon, Garvin Hui
  */
 import javax.swing.*;
-import java.util.Random;
 
 class Score4 {
+
+    /**
+     * Main Method for the game
+     * @author Albert Quon & Garvin Hui
+     * @param args
+     */
     public static void main(String[] args) {
         boolean validSize;
         int boardSize;
@@ -35,27 +40,56 @@ class Score4 {
 
         int board[][][] = new int[boardSize][boardSize][boardSize];
 
-        for (int i = 0; i < boardSize; i++) {
-            for (int k = 0; k < boardSize; k++) {
-                for (int o = 0; o < boardSize; o++) {
-                    board[i][k][o] = 0;
-                }
-            }
-        }
+        int[][][] testGrid = {
+                {       {-1,0,-1,-1},//floor 1
+                        {1,1,1,-1},
+                        {1,1,1,-1},
+                        {1,0,-1,1}},
+
+                {       {1,0,0,0},//floor 2
+                        {0,-1,0,0},
+                        {0,0,-1,0},
+                        {0,0,0,0}},
+
+                {       {0,0,0,0},//floor 3
+                        {0,0,0,0},
+                        {0,-1,1,0},
+                        {0,0,0,0}},
+
+                {       {0,0,0,0}, //floor4
+                        {0,0,0,0},
+                        {0,1,1,0},
+                        {0,0,0,0}}
+        };
 
         //Set up Grid Panel
         DisplayGrid grid = new DisplayGrid(board);
         boolean quit = false;
         boolean won = false;
-        while (!quit) {
+        boolean aiPlaced;
+        int win;
+        while (!quit && !won) {
             //Display the grid on a Panel
             grid.refresh();
             if (playerTurn == 1) {
                 userMove(board);
             } else {
-                boardUpdate(board, randomMove(board), playerTurn);
+//                do {
+//                    aiPlaced = boardUpdate(board, turn(board), playerTurn);
+//                } while (!aiPlaced);
+                boardUpdate(board, turn(board, playerTurn), playerTurn);
             }
-
+            win=win(board);
+            if (win == 2) {
+                System.out.println("tie!");
+                won = true;
+            } else if (win < 0) {
+                System.out.println("computer wins!");
+                won = true;
+            } else if (win > 0) {
+                won = true;
+                System.out.println("player wins!");
+            }
             playerTurn *= -1;
             numberTurns++;
 
@@ -64,6 +98,11 @@ class Score4 {
         }
     }
 
+    /**
+     * Validates User Input
+     * @author Garvin Hui
+     * @param board Current Game State
+     */
     public static void userMove (int board[][][]) {
         String input = JOptionPane.showInputDialog("Please Enter Coordinates");
         boolean valid;
@@ -101,6 +140,14 @@ class Score4 {
         } while ((!valid) || (!placed));
     }
 
+    /**
+     * Updates the board with computer and user input
+     * @author Garvin Hui
+     * @param board
+     * @param coordinate
+     * @param player
+     * @return a boolean value indicating whether the board has been updated or not
+     */
     public static boolean boardUpdate(int board[][][], int[] coordinate, int player)  {
         boolean placed = false;
         int level = 0;
@@ -132,97 +179,85 @@ class Score4 {
         return placed;
     }
 
-    static int[] randomMove(int[][][] grid) {
-        Random rand = new Random();
-        int[] coordinate = new int[2];
-        int randX;
-        int randY;
-        boolean floorClear = false;
-        boolean played = false;
-        for (int i = 0; i < grid.length; i++) {
-            //System.out.println("Floor " + (i + 1));
-            for (int j = 0; j < grid.length; j++) {
-                for (int k = 0; k < grid.length; k++) {
-                    if (grid[i][j][k] == 0) {
-                        floorClear = true;
+    // **********START of WIN CHECKING METHODS AND BEST MOVE METHODS *************************************************************************
 
-                    }
-                    //System.out.print(grid[i][j][k]);
-                }
-                //System.out.println("");
-            }
-            while (!played && floorClear) {
-                randX = rand.nextInt(grid.length);
-                randY = rand.nextInt(grid.length);
-                if (grid[i][randX][randY] == 0) {
-                    coordinate[0] = randX;
-                    coordinate[1] = randY;
-                    played = true;
-                    //return coordinate;
-                }
-            }
-            //System.out.println("");
-        }
-        return coordinate;
-    }
-    
-    // START of WIN CHECKING METHODS AND BEST MOVE METHODS
     /**
      * Checks if any player has won
+     * @author Albert Quon
      * @param grid Current Game State
      * @return An integer value that states if player won, computer won, or no win was determined based on the sign of the integer
      */
     static int win(int[][][] grid) {
         int checkWin = 0;
-        for (int i = 0; i < grid.length; i++) { // loop through the entire grid (i is used for different parameters)
-            // check through rows
-            checkWin += rowUpWin(grid, 0, i, 0) + rowUpWin(grid, 0, 0, i);
-            checkWin += diagRowUpWin(grid, 0, i, 0) + diagRowUpWin(grid, 0, 0, i);
-            // check through columns
-            checkWin += colUpWin(grid, i, 0, 0) + colUpWin(grid, 0, 0, i);
-            checkWin += diagColUpWin(grid, i, 0, 0) + diagRowColUpWin(grid, 0, 0, i);
-            // check diagonally on the same height
-            checkWin += diagSameFloorWin(grid, i, 0, 0) + diagSameFloorWin(grid, 0, i, 0) +
-                    diagSameFloorWin(grid, 0, 0, i); // checks from the right
-            checkWin += diagBackSameFloorWin(grid, i, grid.length-1, 0) + diagBackSameFloorWin(grid, 0, grid.length-1-i, 0) +
-                    diagBackSameFloorWin(grid, 0, grid.length-1, i); // checks from the left
-            // check through heights and diagonally through heights (bottom to top)
-            checkWin += floorUpWin(grid, 0, i, 0) + floorUpWin(grid, i, 0, 0);
-            checkWin += diagRowColUpWin(grid, i, 0, 0) + diagRowColUpWin(grid, 0, i, 0) +
-                    diagRowColUpWin(grid, 0, 0, i);
-            checkWin += diagLeftUpWin(grid, i, grid.length-1, 0) + diagLeftUpWin(grid, 0, grid.length-1-i, 0) +
-                    diagLeftUpWin(grid, 0, grid.length-1, i);
-            //check from top to bottom across rows, then columns, then diagonally
-            checkWin += rowDownWin(grid, 0, i, (grid.length-1)) + rowDownWin(grid, 0, 0, (grid.length-1)-i);
-            checkWin += colDownWin(grid, i, 0, (grid.length-1)) + colDownWin(grid, 0, 0, (grid.length-1)-i);
-            checkWin += colRowDownWin(grid, i, 0, (grid.length-1)) + colRowDownWin(grid, 0, i, (grid.length-1)) +
-                            colRowDownWin(grid, i, 0, (grid.length-1)-i);
-            checkWin += colRowDownBackWin(grid, i, grid.length-1, (grid.length-1)) + colRowDownBackWin(grid, 0, grid.length-1-i, (grid.length-1)) +
-                    colRowDownBackWin(grid, 0, grid.length-1, (grid.length-1)-i);
+        boolean space = false;
+        for (int i = 0; i < grid.length; i++) {
+            for (int j = 0; j < grid.length; j++) {
+                for (int k = 0; k < grid.length; k++) {
+                    if (grid[i][j][k] == 0) {
+                        space = true;
+                    }
+                }
+            }
+        }
+        if (space) {
+            for (int i = 0; i < grid.length; i++) { // loop through the entire grid (i is used for different parameters)
+                // i and j alternate in parameters, never repeated if the method is called more than once within a variable
+                for (int j = 0; j < grid.length; j++) {
+                    checkWin += rowUpWin(grid, 0, i, j);
+                    checkWin += diagRowUpWin(grid, 0, i, j);
+                    // check through columns
+                    checkWin += colUpWin(grid, i, 0, j);
+                    checkWin += diagColUpWin(grid, i, 0, j);
+                    // check diagonally on the same height
+                    checkWin += diagSameFloorWin(grid, i, j, 0) + diagSameFloorWin(grid, 0, i, j) +
+                            diagSameFloorWin(grid, j, 0, i); // checks for right diagonals
+                    checkWin += diagBackSameFloorWin(grid, i, grid.length - 1, j) + diagBackSameFloorWin(grid, j, grid.length - 1 - i, 0) +
+                            diagBackSameFloorWin(grid, 0, grid.length - 1 - j, i); // checks left diagonals
+                    // check through heights and diagonally through heights (bottom to top)
+                    checkWin += floorUpWin(grid, j, i, 0);
+                    checkWin += diagRowColUpWin(grid, i, j, 0) + diagRowColUpWin(grid, 0, i, j) +
+                            diagRowColUpWin(grid, j, 0, i);
+                    checkWin += diagLeftUpWin(grid, i, grid.length - 1 - j, 0) + diagLeftUpWin(grid, j, grid.length - 1, i) +
+                            diagLeftUpWin(grid, 0, grid.length - 1 - i, j);
+                    //check from top to bottom across rows, then columns, then diagonally
+                    checkWin += rowDownWin(grid, 0, i, (grid.length - 1) - j);
+                    checkWin += colDownWin(grid, i, 0, (grid.length - 1) - j);
+                    checkWin += colRowDownWin(grid, i, 0, (grid.length - 1) - j) + colRowDownWin(grid, 0, i, (grid.length - 1) - j) +
+                            colRowDownWin(grid, i, j, (grid.length - 1));
+                    checkWin += colRowDownBackWin(grid, i, grid.length - 1 - j, (grid.length - 1)) + colRowDownBackWin(grid, 0, grid.length - 1 - i, (grid.length - 1) - j) +
+                            colRowDownBackWin(grid, j, grid.length - 1, (grid.length - 1) - i);
 
+                }
+            }
+        } else {
+            checkWin = 2; // indicates a tie
         }
         return checkWin;
     }
 
     /**
      * Determines the computers move based on the current game state
+     * @author Albert Quon
      * @param grid Current Game State
+     * @param turn Value that indicates priority
+     * @return Coordinate of the computer's move in an array
      */
-    static int[] turn(int grid[][][]) {
+    static int[] turn(int grid[][][], int turn) {
         int size = grid.length;
         int[][][] playerCopy = new int[size][size][size];
-        int[][][] currentCopy = new int[size][size][size];
-        int[][][] bestValues = new int[size][size][size];
+        int[][][] compCopy = new int[size][size][size];
+        int[][][] bestCombos = new int[size][size][size];
         int[] coordinate = new int[2];
-        int bestCompMove;
-        int bestPlayerMove;
+        int playerCombo, compCombo;
+        int sameCombo = 0, bestCombo = 0;
+        boolean placed = false;
         int bestMove = 0; // stores the highest value
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 for (int k = 0; k < size; k++) {
                     playerCopy[i][j][k] = grid[i][j][k]; // create copies of player's possible moves
-                    currentCopy[i][j][k] = grid[i][j][k]; // create copies of computer's possible moves
+                    compCopy[i][j][k] = grid[i][j][k]; // create copies of computer's possible moves
                 }
             }
         }
@@ -230,87 +265,94 @@ class Score4 {
             for (int j = 0; j < size; j++) {
                 for (int k = 0; k < size; k++) {
                     if (grid[i][j][k] == 0) {
-                        if ((i == 0)) {
-                            currentCopy[i][j][k] = -1;
+                        if ((i == 0)) { // bottom floor
+                            compCopy[i][j][k] = -1;
                             playerCopy[i][j][k] = 1;
-//                            for (int a = 0; a < size; a++) {
-//                                for (int b = 0; b < size; b++) {
-//                                    for (int c = 0; c < size; c++) {
-//                                        System.out.print(currentCopy[a][b][c]);
-//                                    }
-//                                    System.out.println("");
-//                                }
-//                                System.out.println("");
-//                            }
-                            bestPlayerMove = checkCombos(playerCopy, j, k, i, 1);
-                            bestCompMove = checkCombos(currentCopy, j, k, i, -1);
-                            //System.out.println(i+":"+j+":"+k);
+                            playerCombo = checkCombos(playerCopy, j, k, i, 1);
+                            compCombo = checkCombos(compCopy, j, k, i, -1);
 
-                            if (bestPlayerMove > Math.abs(bestMove)) {
-                                bestMove = bestPlayerMove;
+                            // check if this is the highest combination found
+                            if (playerCombo > Math.abs(bestCombo)) {
+                                bestCombo = playerCombo;
                             }
-                            if (Math.abs(bestCompMove) > Math.abs(bestMove)) {
-                                bestMove = bestCompMove;
+                            if (Math.abs(compCombo) > Math.abs(bestCombo)) {
+                                bestCombo = compCombo;
                             }
-                            if (bestPlayerMove > Math.abs(bestCompMove)) {
-                                bestValues[i][j][k] = bestPlayerMove;
-                            } else if (Math.abs(bestCompMove) > bestPlayerMove) {
-                                bestValues[i][j][k] = bestCompMove;
-                            } else if (Math.abs(bestCompMove) == bestPlayerMove) {
-                                bestValues[i][j][k] = bestCompMove;
+                            // check if this is the best combo for the spot on the grid
+                            if (playerCombo > Math.abs(compCombo)) {
+                                bestCombos[i][j][k] = playerCombo;
+                            } else if (Math.abs(compCombo) > playerCombo) {
+                                bestCombos[i][j][k] = compCombo;
+                            }
+                            // if player's and computer's move both match
+                            if (playerCombo == Math.abs(compCombo)) {
+                                sameCombo = playerCombo;
                             }
 
-                            currentCopy[i][j][k] = 0;
+                            compCopy[i][j][k] = 0;
                             playerCopy[i][j][k] = 0;
 
-                        } else if ((grid[i-1][j][k] != 0)) {
-                            currentCopy[i][j][k] = -1;
+                        } else if ((grid[i-1][j][k] != 0)) { // bottom floor
+                            compCopy[i][j][k] = -1;
                             playerCopy[i][j][k] = 1;
-                            bestPlayerMove = checkCombos(playerCopy, j, k, i, 1);
-                            bestCompMove = checkCombos(currentCopy, j, k, i, -1);
-
-                            if (bestPlayerMove > Math.abs(bestMove)) {
-                                bestMove = bestPlayerMove;
+                            playerCombo = checkCombos(playerCopy, j, k, i, 1);
+                            compCombo = checkCombos(compCopy, j, k, i, -1);
+                            // check if this is the highest combination found
+                            if (playerCombo > Math.abs(bestCombo)) {
+                                bestCombo = playerCombo;
                             }
-                            if (Math.abs(bestCompMove) > Math.abs(bestMove)) {
-                                bestMove = bestCompMove;
+                            if (Math.abs(compCombo) > Math.abs(bestCombo)) {
+                                bestCombo = compCombo;
+                            }
+                            // check if this is the best combo for the spot on the grid
+                            if (playerCombo > Math.abs(compCombo)) {
+                                bestCombos[i][j][k] = playerCombo;
+                            } else if (Math.abs(compCombo) > playerCombo) {
+                                bestCombos[i][j][k] = compCombo;
+                            }
+                            if (playerCombo == Math.abs(compCombo)) {
+                                sameCombo = playerCombo;
+
                             }
 
-                            if (bestPlayerMove > Math.abs(bestCompMove)) {
-                                bestValues[i][j][k] = bestPlayerMove;
-                            }
-                            else if (Math.abs(bestCompMove) > bestPlayerMove) {
-                                bestValues[i][j][k] = bestCompMove;
-                            }
-
-
-                            currentCopy[i][j][k] = 0;
+                            compCopy[i][j][k] = 0;
                             playerCopy[i][j][k] = 0;
 
                         }
-
-
                     }
 
                 }
             }
         }
-        boolean placed = false;
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 for (int k = 0; k < size; k++) {
-                    System.out.print(bestValues[i][j][k]);
-                    if (Math.abs(bestValues[i][j][k]) == Math.abs(bestMove) && !placed) {
-                        //grid[i][j][k] = -1;
-                        placed = true;
-                        //System.out.println(i+":"+j+":"+k);
-                        coordinate[0] = k;
-                        coordinate[1] = j;
-                    }
+                    System.out.print(bestCombos[i][k][j]);
                 }
                 System.out.println("");
             }
             System.out.println("");
+        }
+
+        // priority on the best move based on turn priority (if computer or player places first)
+        // only if both moves are the same
+        if (sameCombo == Math.abs(bestCombo) && (sameCombo > 3)) {
+            if ((turn == -1) && (bestCombo > 0)) {
+                bestCombo *= (-1);
+            }
+        }
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                for (int k = 0; k < size; k++) {
+                    if (bestCombos[i][j][k] == bestCombo && !placed) {
+                        placed = true;
+                        coordinate[0] = k;
+                        coordinate[1] = grid.length-j-1;
+                    }
+
+                }
+            }
         }
         return coordinate;
     }
@@ -318,56 +360,307 @@ class Score4 {
 
     /**
      * Checks all possible fourteen locations around a move, gives a score based on the number of combinations present
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param player
-     * @return
+     * @author Albert Quon
+     * @param grid Current game state
+     * @param row Current row
+     * @param column Current column
+     * @param height Current height
+     * @param player Computer or player
+     * @return Highest combination found for a certain move
      */
     static int checkCombos(int[][][] grid, int row, int column, int height, int player) {
-        int score = 0;
+        int combo = 0; // highest combo for the player
+        int tempCombo; // stores the return value of the methods
+        //determine if any diagonal combinations can be valid by finding the length of diagonals
+        int diagLengthLeftRight = diagonalLengthLR(grid.length, row, column);
+        System.out.println(diagLengthLeftRight + "LR" + height + ";" + row + ";" + column);
+        int diagLengthRightLeft = diagonalLengthRL(grid.length, row, column);
+        System.out.println(diagLengthRightLeft + "RL" + height + ";" + row + ";" + column);
+        int diagHeightLeftRightRow = diagonalHeightRow(grid.length, row, height);
+        int diagHeightRightLeftRow = diagonalHeightRowOpp(grid.length, row, height);
+        int diagHeightLeftRightCol = diagonalHeightCol(grid.length, column, height);
+        int diagHeightRightLeftCol = diagonalHeightColOpp(grid.length, column, height);
 
         // checks all directions on the same plane/height
-        score += left(grid, row, column, height,0, player);
-        score += up(grid, row, column, height,0, player);
-        score += right(grid, row, column, height,0, player);
-        score += down(grid, row, column, height,0, player);
-        score += upLeft(grid, row, column, height,0, player);
-        score += downLeft(grid, row, column, height,0, player);
-        score += upRight(grid, row, column, height,0, player);
-        score += downRight(grid, row, column, height,0, player);
-
-        //checks all directions above the move
-        if (height < grid.length) {
-            score += above(grid, row, column, height, 0, player);
-            score += aboveFront(grid, row, column, height, 0, player);
-            score += aboveFrontLeft(grid, row, column, height, 0, player);
-            score += aboveFrontRight(grid, row, column, height, 0, player);
-            score += aboveBehind(grid, row, column, height, 0, player);
-            score += aboveBehindLeft(grid, row, column, height, 0, player);
-            score += aboveBehindRight(grid, row, column, height, 0, player);
-            score += aboveLeft(grid, row, column, height, 0, player);
-            score += aboveRight(grid, row, column, height, 0, player);
-        }
-        // checks all directions below a move
-        if (height > 0) {
-            score += below(grid, row, column, height, 0, player);
-            score += belowFront(grid, row, column, height, 0, player);
-            score += belowFrontLeft(grid, row, column, height, 0, player);
-            score += belowFrontRight(grid, row, column, height, 0, player);
-            score += belowBehind(grid, row, column, height, 0, player);
-            score += belowBehindLeft(grid, row, column, height, 0, player);
-            score += belowBehindRight(grid, row, column, height, 0, player);
-            score += belowLeft(grid, row, column, height, 0, player);
-            score += belowRight(grid, row, column, height, 0, player);
+        // methods are grouped by complimentary/opposite directions
+        //entire column
+        tempCombo = left(grid, row, column, height, 0, player);
+        tempCombo = right(grid, row, column, height, tempCombo, player);
+        if (Math.abs(tempCombo) > Math.abs(combo)) {
+            combo = tempCombo;
         }
 
-        return score;
+        //entire row
+        tempCombo = up(grid, row, column, height,0, player);
+        tempCombo = down(grid, row, column, height, tempCombo, player);
+        if (tempCombo > combo) {
+            combo = tempCombo;
+        }
+        // diagonals will be considered if diagonal wins are possible
+        if (diagLengthLeftRight > 3) {
+
+            tempCombo = upLeft(grid, row, column, height, 0, player);
+            tempCombo = downRight(grid, row, column, height, tempCombo, player);
+            if (tempCombo > combo) {
+                combo = tempCombo;
+            }
+
+            tempCombo = aboveFrontLeft(grid, row, column, height, 0, player);
+            tempCombo = belowBehindRight(grid, row, column, height, tempCombo, player);
+            if (Math.abs(tempCombo) > Math.abs(combo)) {
+                combo = tempCombo;
+            }
+
+            tempCombo = aboveBehindLeft(grid, row, column, height, 0, player);
+            tempCombo = belowFrontRight(grid, row, column, height, tempCombo, player);
+
+            if (Math.abs(tempCombo) > Math.abs(combo)) {
+                combo = tempCombo;
+            }
+        }
+        // diagonals will be considered if diagonal wins are possible
+        if (diagLengthRightLeft > 3) {
+            tempCombo = upRight(grid, row, column, height, 0, player);
+            tempCombo = downLeft(grid, row, column, height, tempCombo, player);
+            if (Math.abs(tempCombo) > Math.abs(combo)) {
+                combo = tempCombo;
+            }
+            tempCombo = aboveFrontRight(grid, row, column, height, 0, player);
+            tempCombo = belowBehindLeft(grid, row, column, height, tempCombo, player);
+
+            if (Math.abs(tempCombo) > Math.abs(combo)) {
+                combo = tempCombo;
+            }
+            tempCombo = aboveBehindRight(grid, row, column, height, 0, player);
+            tempCombo = belowFrontLeft(grid, row, column, height, tempCombo, player);
+
+            if (Math.abs(tempCombo) > Math.abs(combo)) {
+                combo = tempCombo;
+            }
+            System.out.println(combo + "c");
+
+        }
+
+        //checks all directions that vary in height
+        tempCombo = above(grid, row, column, height, 0, player);
+        tempCombo = below(grid, row, column, height, tempCombo, player);
+        
+        if (Math.abs(tempCombo) > Math.abs(combo)) {
+            combo = tempCombo;
+        }
+
+        // checks from increasing row and height, diagonally with decreasing row and height
+        if (diagHeightLeftRightRow > 3) {
+            tempCombo = aboveFront(grid, row, column, height, 0, player);
+            tempCombo = belowBehind(grid, row, column, height, tempCombo, player);
+            if (Math.abs(tempCombo) > Math.abs(combo)) {
+                combo = tempCombo;
+            }
+        }
+        // checks from increasing row and decreasing height, diagonally with decreasing row and increasing height
+        if (diagHeightRightLeftRow > 3) {
+            tempCombo = aboveBehind(grid, row, column, height, 0, player);
+            tempCombo = belowFront(grid, row, column, height, tempCombo, player);
+
+            if (Math.abs(tempCombo) > Math.abs(combo)) {
+                combo = tempCombo;
+            }
+        }
+        // checks from increasing columns and decreasing height, diagonally with decreasing columns and increasing height
+        if (diagHeightRightLeftCol > 3) {
+            tempCombo = aboveLeft(grid, row, column, height, 0, player);
+            tempCombo = belowRight(grid, row, column, height, tempCombo, player);
+
+            if (Math.abs(tempCombo) > Math.abs(combo)) {
+                combo = tempCombo;
+            }
+        }
+        // checks from increasing columns and height, diagonally with decreasing columns and height
+        if (diagHeightLeftRightCol > 3) {
+            tempCombo = aboveRight(grid, row, column, height, 0, player);
+            tempCombo = belowLeft(grid, row, column, height, tempCombo, player);
+
+            if (Math.abs(tempCombo) > Math.abs(combo)) {
+                combo = tempCombo;
+            }
+        }
+
+        //highest combination has been found, subtract the extra value from the initial spot
+        return combo-1;
 
     }
 
-    //END OF WIN CHECKING METHODS AND BEST MOVE METHODS
+    /**
+     * Checks for the diagonal length from top right to bottom left from a specific point
+     * @author Albert Quon
+     * @param length The maximum length of the board
+     * @param row The current row
+     * @param column The current column
+     * @return The total length of the diagonal
+     */
+    static int diagonalLengthRL(int length, int row, int column) {
+        int diagonalLength = 1; // add initial point
+        int tempRow = row;
+        int tempCol = column;
+        // split into two directions from a single point (diagonally)
+        while ((tempRow != 0) && (tempCol != length)) {
+            diagonalLength++;
+            tempRow--;
+            tempCol++;
+        }
+        while ((column != 0) && (row != length)) {
+            diagonalLength++;
+            row++;
+            column--;
+        }
+        return diagonalLength;
+    }
+
+    /**
+     * Checks for the diagonal length from top left to bottom right on a specific point
+     * @author Albert Quon
+     * @param length The maximum length of the board
+     * @param row The current row
+     * @param column The current column
+     * @return The total length of the diagonal
+     */
+    static int diagonalLengthLR(int length, int row, int column) {
+        int diagonalLength = 0;
+        int tempRow = row;
+        int tempCol = column;
+        // split into two directions from a single point (diagonally)
+        while ((tempRow != length) && (tempCol != length)) {
+            diagonalLength++;
+            tempRow++;
+            tempCol++;
+
+        }
+
+        while ((column != 0) && (row != 0)) {
+            diagonalLength++;
+            row--;
+            column--;
+
+        }
+        return diagonalLength;
+    }
+
+    /**
+     * Checks from top left to bottom right through heights and rows
+     * @author Albert Quon
+     * @param length The maximum length of the board
+     * @param row The current row
+     * @param height The current height
+     * @return The length of the diagonal
+     */
+    static int diagonalHeightRow(int length, int row, int height) {
+        int diagonalLength = 0;
+        int tempRow = row;
+        int tempHeight = height;
+        // split into two directions from a single point (diagonally)
+        while ((tempRow != length) && (tempHeight != length)) {
+            diagonalLength++;
+            tempRow++;
+            tempHeight++;
+
+        }
+        while ((height != 0) && (row != 0)) {
+            diagonalLength++;
+            row--;
+            height--;
+
+        }
+        return diagonalLength;
+    }
+
+    /**
+     * Checks from top right to bottom left through heights and rows
+     * @author Albert Quon
+     * @param length The maximum length of the board
+     * @param row The current row
+     * @param height The current height
+     * @return The length of the diagonal
+     */
+    static int diagonalHeightRowOpp(int length, int row, int height) {
+        int diagonalLength = 1; // initial move
+        int tempRow = row;
+        int tempHeight = height;
+        // split into two directions from a single point (diagonally)
+        while ((tempRow != 0) && (tempHeight != length)) {
+            diagonalLength++;
+            tempRow--;
+            tempHeight++;
+
+        }
+        while ((height != length) && (row != 0)) {
+            diagonalLength++;
+            row--;
+            height++;
+
+        }
+        return diagonalLength;
+    }
+
+    /**
+     * Checks the diagonal height from top left to bottom right diagonally through columns
+     * @author Albert Quon
+     * @param length The maximum length of the board
+     * @param column The current column
+     * @param height The current height
+     * @return The length of the diagonal
+     */
+    static int diagonalHeightCol(int length,int column, int height) {
+        int diagonalLength = 0;
+        int tempCol = column;
+        int tempHeight = height;
+
+        // split into two directions from a single point (diagonally)
+        while ((tempCol != length) && (tempHeight != length)) {
+            diagonalLength++;
+            tempCol--;
+            tempHeight++;
+
+        }
+        while ((height != 0) && (column != 0)) {
+            diagonalLength++;
+            column--;
+            height++;
+
+        }
+        return diagonalLength;
+    }
+
+    /**
+     * Checks the diagonal height from top right to bottom left diagonally through columns
+     * @author Albert Quon
+     * @param length The maximum length of the board
+     * @param column The current column
+     * @param height The current height
+     * @return The length of the diagonal
+     */
+    static int diagonalHeightColOpp(int length, int column, int height) {
+        int diagonalLength = 1; // initial move
+        int tempCol = column;
+        int tempHeight = height;
+
+        // split into two directions from a single point (diagonally)
+        while ((tempCol != 0) && (tempHeight != length)) {
+            diagonalLength++;
+            tempCol--;
+            tempHeight++;
+
+        }
+        while ((height != length) && (column != 0)) {
+            diagonalLength++;
+            column--;
+            height++;
+
+        }
+        return diagonalLength;
+    }
+
+
+    //********************************END OF WIN CHECKING METHODS AND BEST MOVE METHODS*****************************
 
 
 
@@ -375,11 +668,12 @@ class Score4 {
 
 
     // RECURSIVE HELPER METHODS
-    // START OF WIN CHECKING RECURSIVE METHODS
+    //************************************* START OF WIN CHECKING RECURSIVE METHODS********************************
 
 
     /**
      * Determines if there's a four in a row in a specific row through recursion
+     * @author Albert Quon
      * @param grid The current game state
      * @param row The starting row
      * @param column The starting column
@@ -402,6 +696,7 @@ class Score4 {
 
     /**
      * Determines if there's a four in a row in a specific column through recursion
+     * @author Albert Quon
      * @param grid The current game state
      * @param row The starting row
      * @param column The starting column
@@ -425,6 +720,7 @@ class Score4 {
 
     /**
      * Determines if there's a four in a row in a specific height through recursion
+     * @author Albert Quon
      * @param grid The current game state
      * @param row The starting row
      * @param column The starting column
@@ -447,7 +743,8 @@ class Score4 {
     }
 
     /**
-     * Determines if there's a four in a row in a ______ through recursion
+     * Determines if there's a four in a row in a diagonal on the same height through recursion
+     * @author Albert Quon
      * @param grid The current game state
      * @param row The starting row
      * @param column The starting column
@@ -469,7 +766,8 @@ class Score4 {
     }
 
     /**
-     * Determines if there's a four in a row in a ______ through recursion
+     * Determines if there's a four in a row in a diagonally left on the same height through recursion
+     * @author Albert Quon
      * @param grid The current game state
      * @param row The starting row
      * @param column The starting column
@@ -491,7 +789,8 @@ class Score4 {
     }
 
     /**
-     * Determines if there's a four in a row in a ______ through recursion
+     * Determines if there's a four in a row in a through increasing height and rows through recursion
+     * @author Albert Quon
      * @param grid The current game state
      * @param row The starting row
      * @param column The starting column
@@ -513,7 +812,8 @@ class Score4 {
     }
 
     /**
-     * Determines if there's a four in a row in a ______ through recursion
+     * Determines if there's a four in a row in increasing heights and columns through recursion
+     * @author Albert Quon
      * @param grid The current game state
      * @param row The starting row
      * @param column The starting column
@@ -535,7 +835,8 @@ class Score4 {
     }
 
     /**
-     * Determines if there's a four in a row in a ______ through recursion
+     * Determines if there's a four in a row in through increasing heights diagonally through recursion
+     * @author Albert Quon
      * @param grid The current game state
      * @param row The starting row
      * @param column The starting column
@@ -557,7 +858,8 @@ class Score4 {
     }
 
     /**
-     * Determines if there's a four in a row in a ______ through recursion
+     * Determines if there's a four in a row in diagonally left in increasing heights through recursion
+     * @author Albert Quon
      * @param grid The current game state
      * @param row The starting row
      * @param column The starting column
@@ -579,7 +881,8 @@ class Score4 {
     }
 
     /**
-     * Determines if there's a four in a row in a ______ through recursion
+     * Determines if there's a four in a row in decreasing heights and increasing rows through recursion
+     * @author Albert Quon
      * @param grid The current game state
      * @param row The starting row
      * @param column The starting column
@@ -601,7 +904,8 @@ class Score4 {
     }
 
     /**
-     * Determines if there's a four in a row in a ______ through recursion
+     * Determines if there's a four in a row in decreasing heights and increasing columns through recursion
+     * @author Albert Quon
      * @param grid The current game state
      * @param row The starting row
      * @param column The starting column
@@ -623,7 +927,8 @@ class Score4 {
     }
 
     /**
-     * Determines if there's a four in a row in a ______ through recursion
+     * Determines if there's a four in a row in diagonally right in decreasing heights through recursion
+     * @author Albert Quon
      * @param grid The current game state
      * @param row The starting row
      * @param column The starting column
@@ -644,7 +949,8 @@ class Score4 {
         return colRowDownWin(grid, row+1, column+1, height-1);
     }
     /**
-     * Determines if there's a four in a row in a ______ through recursion
+     * Determines if there's a four in a row in diagonally left in decreasing heights through recursion
+     * @author Albert Quon
      * @param grid The current game state
      * @param row The starting row
      * @param column The starting column
@@ -674,167 +980,201 @@ class Score4 {
     // START OF BEST MOVE RECURSIVE METHODS
 
     // METHODS THAT CHECK FOR COMBINATIONS ON THE SAME HEIGHT
-    // Row: [UP, DOWN] Column: [LEFT, RIGHT] Diagonals: upRight, upLeft, downLeft, downRight
+    // Row: [UP(-1), DOWN(+1)] Column: [LEFT(-1), RIGHT(+1)] Diagonals: upRight, upLeft, downLeft, downRight
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations through decreasing rows
+     * @author Albert Quon
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
+
     static int up(int[][][] grid, int row, int column, int height, int combo, int playerType) {
 
         if (row < 0) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return up(grid, row-1, column, height, combo+1, playerType);
     }
 
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations through increasing rows
+     * @author Albert Quon
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
     static int down(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if (row >= grid.length) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return down(grid, row+1, column, height, combo+1, playerType);
     }
 
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations through decreasing columns
+     * @author Albert Quon
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
     static int left(int[][][] grid, int row, int column, int height, int combo, int playerType) {
 
         if (column < 0) {
-            return (int) (Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-
-            return (int) Math.pow(combo, combo) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return left(grid, row, column-1, height, combo+1, playerType);
     }
 
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations through increasing columns
+     * @author Albert Quon
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
     static int right(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if (column == grid.length) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
 
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return right(grid, row, column+1, height, combo+1, playerType);
     }
-
+    
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations through diagonally in decreasing rows and columns
+     * @author Albert Quon
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
     static int upLeft(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if ((column < 0) || (row < 0)){
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return upLeft(grid, row-1, column-1, height, combo+1, playerType);
     }
 
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations through diagonally with increasing columns and decreasing rows
+     * @author Albert Quon
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
     static int upRight(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if ((column == grid.length) || (row < 0)){
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return upRight(grid, row-1, column+1, height, combo+1, playerType);
     }
 
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations diagonally through increasing rows and decreasing columns
+     * @author Albert Quon
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
+
     static int downLeft(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if ((column < 0) || (row == grid.length)){
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return downLeft(grid, row+1, column-1, height, combo+1, playerType);
     }
 
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations through diagonally through increasing rows and increasing columns
+     * @author Albert Quon
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
+
     static int downRight(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if ((column == grid.length) || (row == grid.length)){
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return downRight(grid, row+1, column+1, height, combo+1, playerType);
     }
@@ -848,360 +1188,423 @@ class Score4 {
     // START OF METHODS THAT CHECK VARYING HEIGHTS
     // Height: [Above = +1, Down = -1], Rows: [Front = -1, Behind = +1], Columns: [Left = -1, Right = +1]
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations through increasing height above the move
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
     static int above(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if (height == grid.length) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return above(grid, row, column, height+1, combo+1, playerType);
     }
+    
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations diagonally through increasing height and decreasing rows
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
     static int aboveFront(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if ((height == grid.length) || (row < 0)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return aboveFront(grid, row-1, column, height+1, combo+1, playerType);
     }
 
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations diagonally through increasing height and rows
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
+
     static int aboveBehind(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if ((height == grid.length) || (row == grid.length)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return aboveBehind(grid, row+1, column, height+1, combo+1, playerType);
     }
 
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations diagonally through increasing heights and decreasing columns
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
+
     static int aboveLeft(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if ((height == grid.length) || (column < 0)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return aboveLeft(grid, row, column-1, height+1, combo+1, playerType);
     }
 
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations diagonally through increasing height and columns
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
+
     static int aboveRight(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if ((height == grid.length) || (column == grid.length)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return aboveRight(grid, row, column+1, height+1, combo+1, playerType);
     }
 
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations diagonally through increasing height and decreasing rows and columns
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
+
     static int aboveFrontLeft(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if ((height == grid.length) || (row < 0) || (column < 0)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return aboveFrontLeft(grid, row-1, column-1, height+1, combo+1, playerType);
     }
 
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations diagonally through increasing heights and columns and decreasing rows
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
     static int aboveFrontRight(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if ((height == grid.length) || (row < 0) || (column == grid.length)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return aboveFrontRight(grid, row-1, column+1, height+1, combo+1, playerType);
     }
 
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations diagonally through increasing height and rows and decreasing columns
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
     static int aboveBehindLeft(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if ((height == grid.length) || (row == grid.length) || (column < 0)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return aboveBehindLeft(grid, row+1, column-1, height+1, combo+1, playerType);
     }
 
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations diagonally through increasing heights, rows, and columns
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
     static int aboveBehindRight(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if ((height == grid.length) || (row == grid.length) || (column == grid.length)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return aboveBehindRight(grid, row+1, column+1, height+1, combo+1, playerType);
     }
 
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations through decreasing height 
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
     static int below(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if ((height < 0)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            }
+            return combo*playerType;
         }
         return below(grid, row, column, height-1, combo+1, playerType);
     }
 
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations diagonally through decreasing height and rows
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
+
     static int belowFront(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if ((height < 0) || (row < 0)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            }
+            return combo*playerType;
         }
         return belowFront(grid, row-1, column, height-1, combo+1, playerType);
     }
 
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations diagonally through decreasing height and increasing rows
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
+
     static int belowBehind(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if ((height < 0) || (row == grid.length)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return belowBehind(grid, row+1, column, height-1, combo+1, playerType);
     }
 
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations diagonally through decreasing height and columns
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
+
     static int belowLeft(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if ((height < 0) || (column < 0)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return belowLeft(grid, row, column-1, height-1, combo+1, playerType);
     }
 
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations diagonally through decreasing height and increasing columns
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
     static int belowRight(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if ((height < 0) || (column == grid.length)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return belowRight(grid, row, column+1, height-1, combo+1, playerType);
     }
 
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations diagonally through decreasing height, rows, and columns
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
+
     static int belowFrontLeft(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if ((height < 0) || (row < 0) || (column < 0)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return belowFrontLeft(grid, row-1, column-1, height-1, combo+1, playerType);
     }
 
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations diagonally through decreasing height and rows and decreasing columns
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
     static int belowFrontRight(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if ((height < 0) || (row < 0) || (column == grid.length)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return belowFrontRight(grid, row-1, column+1, height-1, combo+1, playerType);
     }
 
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations diagonally through decreasing height and columns and increasing rows
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
     static int belowBehindLeft(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if ((height < 0) || (row == grid.length) || (column < 0)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return belowBehindLeft(grid, row+1, column-1, height-1, combo+1, playerType);
     }
 
     /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
+     * Recursively checks for combinations diagonally through decreasing height and increasing rows and columns
+     * @param grid Current Game State
+     * @param row The current row
+     * @param column  The current column
+     * @param height The current height
+     * @param combo Current combination
+     * @param playerType Player combination to specifically search for
+     * @return The score of the move and highest combination found
      */
     static int belowBehindRight(int[][][] grid, int row, int column, int height, int combo, int playerType) {
         if ((height < 0) || (row == grid.length) || (column == grid.length)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            return combo*playerType;
         }
         if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
+            if (playerType == playerType*(-1)) {
+                combo = 0; // combo will not be considered since it's not possible for a win
+            } 
+            return combo*playerType;
         }
         return belowBehindRight(grid, row+1, column+1, height-1, combo+1, playerType);
     }
