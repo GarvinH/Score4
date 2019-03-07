@@ -1,11 +1,14 @@
 /* [Score4.java]
- * Score 4 game (3d Connect 4). Has AI and player moves.
+ * Score 4 game (3d connect 4). Has AI and player moves
  * Author: Albert Quon, Garvin Hui
  */
 import javax.swing.*;
 import java.util.Random;
 
 class Score4 {
+    private static boolean placed = false;//placed variable that can be accessed by DisplayGrid class
+
+    //Author Garvin Hui
     public static void main(String[] args) {
         boolean validSize;
         int boardSize;
@@ -13,55 +16,99 @@ class Score4 {
         do {
             validSize = true;
             for (int i = 0; i < boardSizeInput.length(); i++) {
-                if ((boardSizeInput.charAt(i) < '1') || (boardSizeInput.charAt(i) > '9')) {
+                if ((boardSizeInput.charAt(i) < '0') || (boardSizeInput.charAt(i) > '9')) {//making sure only an integer is entered
                     validSize = false;
                 }
             }
             if (!validSize) {
                 boardSizeInput = JOptionPane.showInputDialog("Please enter a valid board size:");
+            } else {
+                if (Integer.parseInt(boardSizeInput) < 4) {//making sure that the board is minimum size 4 (playable size)
+                    validSize = false;
+                }
             }
         } while (!validSize);
         boardSize = Integer.parseInt(boardSizeInput);
 
-        int playerTurn;//-1 will be AI turn and 1 will be player turn.
+        PlayerTurn turn = new PlayerTurn();//Refer to class below. -1 will be AI turn and 1 will be player turn.
         Object[] options = {"Player", "Computer"};
-        playerTurn = JOptionPane.showOptionDialog(null, "Choose who goes first.", "Choose player turn", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-        if (playerTurn == 0) {
-            playerTurn = 1;
+        turn.setPlayerTurn(JOptionPane.showOptionDialog(null, "Choose who goes first.", "Choose player turn", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]));
+        if (turn.getPlayerTurn() == 0) {
+            turn.setPlayerTurn(1);//Player goes first
         } else {
-            playerTurn = -1;
+            turn.setPlayerTurn(-1);//AI goes first
         }
         int numberTurns = 0;
 
         int board[][][] = new int[boardSize][boardSize][boardSize];
-
-        for (int i = 0; i < boardSize; i++) {
-            for (int k = 0; k < boardSize; k++) {
-                for (int o = 0; o < boardSize; o++) {
-                    board[i][k][o] = 0;
-                }
-            }
-        }
+        DisplayGrid.MouseClick.setWorld(board);
 
         //Set up Grid Panel
         DisplayGrid grid = new DisplayGrid(board);
         boolean quit = false;
         boolean won = false;
+        boolean aiPlaced;
         while (!quit) {
             //Display the grid on a Panel
             grid.refresh();
-            if (playerTurn == 1) {
-                userMove(board);
-            } else {
-                boardUpdate(board, randomMove(board), playerTurn);
+            if (turn.getPlayerTurn() == -1) {
+                do {
+                    aiPlaced = boardUpdate(board, randomMove(board), turn.getPlayerTurn());
+                } while (!aiPlaced);
+                turn.switchTurns();
             }
 
-            playerTurn *= -1;
-            numberTurns++;
+            if (placed) {
+                turn.switchTurns();
+                numberTurns++;
+                placed = false;
+                System.out.println(numberTurns);
+            }
 
             //Display the grid on a Panel
             grid.refresh();
         }
+    }
+
+    //Object used to store the player turn value and allows for other classes to access and manipulate the playerTurn variable
+    //1 refers to player move and -1 refers to AI move
+    //Author Garvin Hui
+    static class PlayerTurn {
+        static int playerTurn;
+
+        /**
+         * This method allows for the changing of the value of playerTurn
+         * @Author Garvin Hui
+         * @param turn This variable is used in the initialization stage of the program and determines who goes first
+         */
+        void setPlayerTurn (int turn) {
+            playerTurn = turn;
+        }
+
+        /**
+         * This method allows other classes to view who's turn it is
+         * @Author Garvin Hui
+         * @return returns an integer value of playerTurn
+         */
+        static int getPlayerTurn () {
+            return playerTurn;
+        }
+
+        /**
+         * This method switches the turn of the players
+         * @Author Garvin Hui
+         */
+        void switchTurns () {
+            playerTurn *= -1;
+        }
+    }
+
+    /**
+     * This method allows for other classes to change the value of boolean placed
+     * @param isPlaced If the player placed a move or not
+     */
+    public static void setPlaced(boolean isPlaced) {
+        placed = isPlaced;
     }
 
     public static void userMove (int board[][][]) {
@@ -69,13 +116,28 @@ class Score4 {
         boolean valid;
         boolean placed;
         char letter;
+        int numCommas;
         do {
             valid = true;
             placed = false;
+            numCommas = 0;
             if (input == null) {
                 valid = false;
             } else if (!input.contains(",")) {
                 valid = false;
+            } else {
+                if ((input.charAt(0) == ',') || (input.charAt(input.length()-1) == ',')) {
+                    valid = false;
+                } else {
+                    for (int i = 0; i < input.length(); i++) {
+                        if (input.charAt(i) == ',') {
+                            numCommas++;
+                        }
+                    }
+                    if (numCommas > 1) {
+                        valid = false;
+                    }
+                }
             }
             if (valid) {
                 String[] userInput = input.split(",");
@@ -101,6 +163,13 @@ class Score4 {
         } while ((!valid) || (!placed));
     }
 
+    /**
+     * @Auther Garvin Hui
+     * @param board This array takes in this board array so that it can manipulate the board by placing pieces on it provided that the space is empty
+     * @param coordinate This array takes in a coordinate from an input and goes through the process of checking if the coordinates are valid, then uses it to manipulate the board array
+     * @param player This variable can either be a value of 1 or -1 which determines what value to place on the board to indicate which player moved where
+     * @return
+     */
     public static boolean boardUpdate(int board[][][], int[] coordinate, int player)  {
         boolean placed = false;
         int level = 0;
@@ -159,1055 +228,205 @@ class Score4 {
                     coordinate[1] = randY;
                     played = true;
                     //return coordinate;
+                    System.out.println(coordinate[0] + " " + coordinate[1]);
                 }
             }
             //System.out.println("");
         }
         return coordinate;
     }
-    
-    // START of WIN CHECKING METHODS AND BEST MOVE METHODS
-    /**
-     * Checks if any player has won
-     * @param grid Current Game State
-     * @return An integer value that states if player won, computer won, or no win was determined based on the sign of the integer
-     */
+    static void findValues(int[][][] grid) {
+
+
+    }
+
+    // record the number of possibilities to win
+    // alternate between player A and B (A prefers highest, B prefers lowest)
+    // return the optimal move
+    static void turn (int[][][] grid, int currentPlayer, int[] gridIndex, int score) {
+
+
+    }
+    // go through each row
+    // go through each column
+    // go through height
+    // ex. [0][0][0] = [0][0][1]
+    // go through diagonally on the same plane
+    // go through diagonally on each separate individual plane
+    // ex. [0][0][0] == [1][1][1] or [0][0][0] == [1][0][1] or [0][0][0] == [0][1][1]
     static int win(int[][][] grid) {
-        int checkWin = 0;
-        for (int i = 0; i < grid.length; i++) { // loop through the entire grid (i is used for different parameters)
-            // check through rows
-            checkWin += rowUpWin(grid, 0, i, 0) + rowUpWin(grid, 0, 0, i);
-            checkWin += diagRowUpWin(grid, 0, i, 0) + diagRowUpWin(grid, 0, 0, i);
-            // check through columns
-            checkWin += colUpWin(grid, i, 0, 0) + colUpWin(grid, 0, 0, i);
-            checkWin += diagColUpWin(grid, i, 0, 0) + diagRowColUpWin(grid, 0, 0, i);
-            // check diagonally on the same height
-            checkWin += diagSameFloorWin(grid, i, 0, 0) + diagSameFloorWin(grid, 0, i, 0) +
-                    diagSameFloorWin(grid, 0, 0, i); // checks from the right
-            checkWin += diagBackSameFloorWin(grid, i, grid.length-1, 0) + diagBackSameFloorWin(grid, 0, grid.length-1-i, 0) +
-                    diagBackSameFloorWin(grid, 0, grid.length-1, i); // checks from the left
-            // check through heights and diagonally through heights (bottom to top)
-            checkWin += floorUpWin(grid, 0, i, 0) + floorUpWin(grid, i, 0, 0);
-            checkWin += diagRowColUpWin(grid, i, 0, 0) + diagRowColUpWin(grid, 0, i, 0) +
-                    diagRowColUpWin(grid, 0, 0, i);
-            checkWin += diagLeftUpWin(grid, i, grid.length-1, 0) + diagLeftUpWin(grid, 0, grid.length-1-i, 0) +
-                    diagLeftUpWin(grid, 0, grid.length-1, i);
-            //check from top to bottom across rows, then columns, then diagonally
-            checkWin += rowDownWin(grid, 0, i, (grid.length-1)) + rowDownWin(grid, 0, 0, (grid.length-1)-i);
-            checkWin += colDownWin(grid, i, 0, (grid.length-1)) + colDownWin(grid, 0, 0, (grid.length-1)-i);
-            checkWin += colRowDownWin(grid, i, 0, (grid.length-1)) + colRowDownWin(grid, 0, i, (grid.length-1)) +
-                            colRowDownWin(grid, i, 0, (grid.length-1)-i);
-            checkWin += colRowDownBackWin(grid, i, grid.length-1, (grid.length-1)) + colRowDownBackWin(grid, 0, grid.length-1-i, (grid.length-1)) +
-                    colRowDownBackWin(grid, 0, grid.length-1, (grid.length-1)-i);
+        int checkC, checkH, checkR, checkDiag,
+                checkDiagRowUp, checkDiagColUp,
+                checkDiagRowDown, checkDiagColDown,
+                checkFloorsUp, checkFloorsDown, checkWin;
+        for (int i = 0; i < grid.length; i++) {
+            for (int j = 0; j < grid.length; j++) {
+                for (int k = 0; k < grid.length; k++) {
+                    checkR = winCheck(grid, j, k, i, 0, 0);
+                    checkC = winCheck(grid, j, k, i, 0, 1);
+                    checkH = winCheck(grid, j, k, i, 0, 2);
+                    checkDiag = winCheck(grid, j, k, i, 0, 3);
+                    checkDiagRowUp = winCheck(grid, j, k, i, 0, 4);
+                    checkDiagColUp = winCheck(grid, j, k, i, 0, 5);
+                    checkFloorsUp = winCheck(grid, j, k, i, 0, 6);
 
-        }
-        return checkWin;
-    }
+                    if((checkR == 1) || (checkR == -1)) {
+                        return checkR;
+                    }
+                    if((checkC == 1) || (checkC == -1)) {
+                        return checkC;
+                    }
+                    if((checkH == 1) || (checkH == -1)) {
+                        return checkH;
+                    }
+                    if((checkDiag == 1) || (checkDiag == -1)) {
+                        return checkDiag;
+                    }
+                    if((checkFloorsUp == 1) || (checkFloorsUp == -1)) {
+                        return checkFloorsUp;
+                    }
+                    if((checkDiagRowUp == 1) || (checkDiagRowUp == -1)) {
+                        return checkDiagRowUp;
+                    }
+                    if((checkDiagColUp == 1) || (checkDiagColUp == -1)) {
+                        return checkDiagColUp;
+                    }
+                    if (i >= 3) {
 
-    /**
-     * Determines the computers move based on the current game state
-     * @param grid Current Game State
-     */
-    static int[] turn(int grid[][][]) {
-        int size = grid.length;
-        int[][][] playerCopy = new int[size][size][size];
-        int[][][] currentCopy = new int[size][size][size];
-        int[][][] bestValues = new int[size][size][size];
-        int[] coordinate = new int[2];
-        int bestCompMove;
-        int bestPlayerMove;
-        int bestMove = 0; // stores the highest value
-
-        for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
-                for (int k = 0; k < size; k++) {
-                    playerCopy[i][j][k] = grid[i][j][k]; // create copies of player's possible moves
-                    currentCopy[i][j][k] = grid[i][j][k]; // create copies of computer's possible moves
-                }
-            }
-        }
-        for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
-                for (int k = 0; k < size; k++) {
-                    if (grid[i][j][k] == 0) {
-                        if ((i == 0)) {
-                            currentCopy[i][j][k] = -1;
-                            playerCopy[i][j][k] = 1;
-//                            for (int a = 0; a < size; a++) {
-//                                for (int b = 0; b < size; b++) {
-//                                    for (int c = 0; c < size; c++) {
-//                                        System.out.print(currentCopy[a][b][c]);
-//                                    }
-//                                    System.out.println("");
-//                                }
-//                                System.out.println("");
-//                            }
-                            bestPlayerMove = checkCombos(playerCopy, j, k, i, 1);
-                            bestCompMove = checkCombos(currentCopy, j, k, i, -1);
-                            //System.out.println(i+":"+j+":"+k);
-
-                            if (bestPlayerMove > Math.abs(bestMove)) {
-                                bestMove = bestPlayerMove;
-                            }
-                            if (Math.abs(bestCompMove) > Math.abs(bestMove)) {
-                                bestMove = bestCompMove;
-                            }
-                            if (bestPlayerMove > Math.abs(bestCompMove)) {
-                                bestValues[i][j][k] = bestPlayerMove;
-                            } else if (Math.abs(bestCompMove) > bestPlayerMove) {
-                                bestValues[i][j][k] = bestCompMove;
-                            } else if (Math.abs(bestCompMove) == bestPlayerMove) {
-                                bestValues[i][j][k] = bestCompMove;
-                            }
-
-                            currentCopy[i][j][k] = 0;
-                            playerCopy[i][j][k] = 0;
-
-                        } else if ((grid[i-1][j][k] != 0)) {
-                            currentCopy[i][j][k] = -1;
-                            playerCopy[i][j][k] = 1;
-                            bestPlayerMove = checkCombos(playerCopy, j, k, i, 1);
-                            bestCompMove = checkCombos(currentCopy, j, k, i, -1);
-
-                            if (bestPlayerMove > Math.abs(bestMove)) {
-                                bestMove = bestPlayerMove;
-                            }
-                            if (Math.abs(bestCompMove) > Math.abs(bestMove)) {
-                                bestMove = bestCompMove;
-                            }
-
-                            if (bestPlayerMove > Math.abs(bestCompMove)) {
-                                bestValues[i][j][k] = bestPlayerMove;
-                            }
-                            else if (Math.abs(bestCompMove) > bestPlayerMove) {
-                                bestValues[i][j][k] = bestCompMove;
-                            }
-
-
-                            currentCopy[i][j][k] = 0;
-                            playerCopy[i][j][k] = 0;
-
+                        checkDiagRowDown = winCheckDown(grid, j, k, i, 0, 0);
+                        checkDiagColDown = winCheckDown(grid, j, k, i, 0, 1);
+                        checkFloorsDown = winCheckDown(grid, j, k, i, 0, 2);
+                        if ((checkFloorsDown == 1) || (checkFloorsDown == -1)) {
+                            return checkFloorsDown;
                         }
-
-
+                        if ((checkDiagColDown == 1) || (checkDiagColDown == -1)) {
+                            return checkDiagColDown;
+                        }
+                        if ((checkDiagRowDown == 1) || (checkDiagRowDown == -1)) {
+                            return checkDiagRowDown;
+                        }
                     }
+                    //checkWin = checkR + checkC +
 
                 }
             }
         }
-        boolean placed = false;
-        for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
-                for (int k = 0; k < size; k++) {
-                    System.out.print(bestValues[i][j][k]);
-                    if (Math.abs(bestValues[i][j][k]) == Math.abs(bestMove) && !placed) {
-                        //grid[i][j][k] = -1;
-                        placed = true;
-                        //System.out.println(i+":"+j+":"+k);
-                        coordinate[0] = k;
-                        coordinate[1] = j;
-                    }
-                }
-                System.out.println("");
-            }
-            System.out.println("");
-        }
-        return coordinate;
+
+        return 0;
     }
 
 
+
     /**
-     * Checks all possible fourteen locations around a move, gives a score based on the number of combinations present
+     * Checks all win conditions and see if it's valid for any player
      * @param grid
      * @param row
      * @param column
      * @param height
-     * @param player
+     * @param target
+     * @param type Determines where the method should search
      * @return
      */
-    static int checkCombos(int[][][] grid, int row, int column, int height, int player) {
-        int score = 0;
-
-        // checks all directions on the same plane/height
-        score += left(grid, row, column, height,0, player);
-        score += up(grid, row, column, height,0, player);
-        score += right(grid, row, column, height,0, player);
-        score += down(grid, row, column, height,0, player);
-        score += upLeft(grid, row, column, height,0, player);
-        score += downLeft(grid, row, column, height,0, player);
-        score += upRight(grid, row, column, height,0, player);
-        score += downRight(grid, row, column, height,0, player);
-
-        //checks all directions above the move
-        if (height < grid.length) {
-            score += above(grid, row, column, height, 0, player);
-            score += aboveFront(grid, row, column, height, 0, player);
-            score += aboveFrontLeft(grid, row, column, height, 0, player);
-            score += aboveFrontRight(grid, row, column, height, 0, player);
-            score += aboveBehind(grid, row, column, height, 0, player);
-            score += aboveBehindLeft(grid, row, column, height, 0, player);
-            score += aboveBehindRight(grid, row, column, height, 0, player);
-            score += aboveLeft(grid, row, column, height, 0, player);
-            score += aboveRight(grid, row, column, height, 0, player);
+    static int winCheck(int[][][] grid, int row, int column, int height, int target, int type) {
+        if ((target == 6) || (target == -6)) {
+            return target/4;
         }
-        // checks all directions below a move
-        if (height > 0) {
-            score += below(grid, row, column, height, 0, player);
-            score += belowFront(grid, row, column, height, 0, player);
-            score += belowFrontLeft(grid, row, column, height, 0, player);
-            score += belowFrontRight(grid, row, column, height, 0, player);
-            score += belowBehind(grid, row, column, height, 0, player);
-            score += belowBehindLeft(grid, row, column, height, 0, player);
-            score += belowBehindRight(grid, row, column, height, 0, player);
-            score += belowLeft(grid, row, column, height, 0, player);
-            score += belowRight(grid, row, column, height, 0, player);
-        }
-
-        return score;
-
-    }
-
-    //END OF WIN CHECKING METHODS AND BEST MOVE METHODS
-
-
-
-
-
-
-    // RECURSIVE HELPER METHODS
-    // START OF WIN CHECKING RECURSIVE METHODS
-
-
-    /**
-     * Determines if there's a four in a row in a specific row through recursion
-     * @param grid The current game state
-     * @param row The starting row
-     * @param column The starting column
-     * @param height The starting height
-     * @return An integer value that is negative, positive, or zero that respectively represents a player win, computer win, or no win
-     */
-    static int rowUpWin(int[][][] grid, int row, int column, int height) {
-        int sum = 0;
-        if ((row > grid.length-4)) {
+        if ((row == grid.length-1) || (column == grid.length-1) || (height == grid.length-1)) {
             return 0;
         }
-        for (int i = 0; i < 4; i++) {
-            sum+=grid[height][row+i][column];
-        }
-        if ((sum == 4) || (sum == -4)) {
-            return sum;
-        }
-        return rowUpWin(grid, row+1, column, height);
-    }
-
-    /**
-     * Determines if there's a four in a row in a specific column through recursion
-     * @param grid The current game state
-     * @param row The starting row
-     * @param column The starting column
-     * @param height The starting height
-     * @return An integer value that is negative, positive, or zero that respectively represents a player win, computer win, or no win
-     */
-    static int colUpWin(int[][][] grid, int row, int column, int height) {
-        int sum = 0;
-        if ((column > grid.length-4)) {
-            return 0;
-        }
-        for (int i = 0; i < 4; i++) {
-            sum+=grid[height][row][column+i];
-        }
-        if ((sum == 4) || (sum == -4)) {
-            return sum;
+        // check row
+        if ((grid[height][row][column] == grid[height][row+1][column]) && (grid[height][row][column] != 0)
+                && (type == 0)) {
+            return (winCheck(grid, row+1, column, height,
+                    target+grid[height][row][column]+grid[height][row+1][column], 0) +
+                    winCheck(grid, row+1, column, height, target, 0));
         }
         // check column
-        return colUpWin(grid, row, column+1, height);
-    }
-
-    /**
-     * Determines if there's a four in a row in a specific height through recursion
-     * @param grid The current game state
-     * @param row The starting row
-     * @param column The starting column
-     * @param height The starting height
-     * @return An integer value that is negative, positive, or zero that respectively represents a player win, computer win, or no win
-     */
-    static int floorUpWin(int[][][] grid, int row, int column, int height) {
-        int sum = 0;
-        if ((height > grid.length-4)) {
-            return 0;
+        if ((grid[height][row][column] == grid[height][row][column+1]) && (grid[height][row][column] != 0)
+                && (type == 1)) {
+            return (winCheck(grid, row, column+1, height,
+                    target+grid[height][row][column]+grid[height][row][column+1], 1) +
+                    winCheck(grid, row, column+1, height, target, 1));
         }
         // check height
-        for (int i = 0; i < 4; i++) {
-            sum+=grid[height+i][row][column];
+        if ((grid[height][row][column] == grid[height+1][row][column]) && (grid[height][row][column] != 0)
+                && (type == 2)) {
+            return (winCheck(grid, row, column, height+1,
+                    target+grid[height][row][column]+grid[height+1][row][column], 2) +
+                    winCheck(grid, row, column, height+1, target, 2));
         }
-        if ((sum == 4) || (sum == -4)) {
-            return sum;
+        // check diagonal on the same plane
+        if ((grid[height][row][column] == grid[height][row+1][column+1]) && (grid[height][row][column] != 0)
+                && (type == 3)) {
+            return (winCheck(grid, row+1, column+1, height,
+                    target+grid[height][row][column]+grid[height][row+1][column+1], 3) +
+                    winCheck(grid, row+1, column+1, height, target, 3));
         }
-        return floorUpWin(grid, row, column, height+1);
+        // check diagonal heights on same column
+        if ((grid[height][row][column] == grid[height+1][row+1][column]) && (grid[height][row][column] != 0)
+                && (type == 4)) {
+            return (winCheck(grid, row+1, column, height+1,
+                    target+grid[height][row][column]+grid[height+1][row+1][column], 4) +
+                    winCheck(grid, row+1, column, height+1, target, 4));
+        }
+        // check diagonal heights on the same row
+        if ((grid[height][row][column] == grid[height+1][row][column+1]) && (grid[height][row][column] != 0)
+                && (type == 5)) {
+            return (winCheck(grid, row, column, height+1,
+                    target+grid[height][row][column]+grid[height+1][row][column+1], 5) +
+                    winCheck(grid, row+1, column, height+1, target, 5));
+        }
+        // check diagonal on increasing floors across
+        if ((grid[height][row][column] == grid[height+1][row+1][column+1]) && (grid[height][row][column] != 0)
+                && (type == 6)) {
+            return (winCheck(grid, row+1, column+1, height+1,
+                    target+grid[height][row][column]+grid[height+1][row+1][column+1], 6) +
+                    winCheck(grid, row+1, column+1, height+1, target, 6));
+        }
+
+        return 0;
+
     }
 
     /**
-     * Determines if there's a four in a row in a ______ through recursion
-     * @param grid The current game state
-     * @param row The starting row
-     * @param column The starting column
-     * @param height The starting height
-     * @return An integer value that is negative, positive, or zero that respectively represents a player win, computer win, or no win
+     * Fix this method
+     * @param grid
+     * @param row
+     * @param column
+     * @param height
+     * @param target
+     * @param type
+     * @return
      */
-    static int diagSameFloorWin(int[][][] grid, int row, int column, int height) {
-        int sum = 0;
-        if ((row > grid.length - 4) || (column > grid.length - 4)) {
+    static int winCheckDown(int[][][] grid, int row, int column, int height, int target, int type) {
+        System.out.println(target);
+        if ((target == 6) || (target == -6)) {
+            return target/4;
+        }
+        if ((row == 0) || (column == 0) || (height == 0)) {
             return 0;
         }
-        for (int i = 0; i < 4; i++) {
-            sum+=grid[height][row+i][column+i];
+        //check diagonally downwards on same row
+        if ((grid[height][row][column] == grid[height-1][row][column-1]) && (grid[height][row][column] != 0)
+                && (type == 0)) {
+            return (winCheck(grid, row, column-1, height-1,
+                    target+grid[height][row][column]+grid[height-1][row][column-1], 0) +
+                    winCheck(grid, row, column-1, height-1, target, 0));
         }
-        if ((sum == 4) || (sum == -4)) {
-            return sum;
+        //check diagonally downwards on same column
+        if ((grid[height][row][column] == grid[height-1][row-1][column]) && (grid[height][row][column] != 0)
+                && (type == 1)) {
+            return (winCheck(grid, row-1, column, height-1,
+                    target+grid[height][row][column]+grid[height-1][row-1][column], 1) +
+                    winCheck(grid, row-1, column, height-1, target, 1));
         }
-        return diagSameFloorWin(grid, row+1, column+1, height);
+        //check diagonally downwards across
+        if ((grid[height][row][column] == grid[height-1][row-1][column-1]) && (grid[height][row][column] != 0)
+                && (type == 0)) {
+            return (winCheck(grid, row-1, column-1, height-1,
+                    target+grid[height][row][column]+grid[height-1][row-1][column-1], 2) +
+                    winCheck(grid, row-1, column-1, height-1, target, 2));
+        }
+        return 0;
     }
-
-    /**
-     * Determines if there's a four in a row in a ______ through recursion
-     * @param grid The current game state
-     * @param row The starting row
-     * @param column The starting column
-     * @param height The starting height
-     * @return An integer value that is negative, positive, or zero that respectively represents a player win, computer win, or no win
-     */
-    static int diagBackSameFloorWin(int[][][] grid, int row, int column, int height) {
-        int sum = 0;
-        if ((row > grid.length-4) || (column < 3)) {
-            return 0;
-        }
-        for (int i = 0; i < 4; i++) {
-            sum+=grid[height][row+i][column-i];
-        }
-        if ((sum == 4) || (sum == -4)) {
-            return sum;
-        }
-        return diagBackSameFloorWin(grid, row+1, column-1, height);
-    }
-
-    /**
-     * Determines if there's a four in a row in a ______ through recursion
-     * @param grid The current game state
-     * @param row The starting row
-     * @param column The starting column
-     * @param height The starting height
-     * @return An integer value that is negative, positive, or zero that respectively represents a player win, computer win, or no win
-     */
-    static int diagRowUpWin(int[][][] grid, int row, int column, int height) {
-        int sum = 0;
-        if ((row > grid.length - 4) || (height > grid.length - 4)) {
-            return 0;
-        }
-        for (int i = 0; i < 4; i++) {
-            sum+=grid[height+i][row+i][column];
-        }
-        if ((sum == 4) || (sum == -4)) {
-            return sum;
-        }
-        return diagRowUpWin(grid, row+1, column, height+1);
-    }
-
-    /**
-     * Determines if there's a four in a row in a ______ through recursion
-     * @param grid The current game state
-     * @param row The starting row
-     * @param column The starting column
-     * @param height The starting height
-     * @return An integer value that is negative, positive, or zero that respectively represents a player win, computer win, or no win
-     */
-    static int diagColUpWin(int[][][] grid, int row, int column, int height) {
-        int sum = 0;
-        if ((column > grid.length - 4) || (height > grid.length - 4)) {
-            return 0;
-        }
-        for (int i = 0; i < 4; i++) {
-            sum+=grid[height+i][row][column+i];
-        }
-        if ((sum == 4) || (sum == -4)) {
-            return sum;
-        }
-        return diagColUpWin(grid, row, column+1, height+1);
-    }
-
-    /**
-     * Determines if there's a four in a row in a ______ through recursion
-     * @param grid The current game state
-     * @param row The starting row
-     * @param column The starting column
-     * @param height The starting height
-     * @return An integer value that is negative, positive, or zero that respectively represents a player win, computer win, or no win
-     */
-    static int diagRowColUpWin(int[][][] grid, int row, int column, int height) {
-        int sum = 0;
-        if ((row > grid.length - 4) || (column > grid.length - 4) || (height > grid.length - 4)) {
-            return 0;
-        }
-        for (int i = 0; i < 4; i++) {
-            sum+=grid[height+i][row+i][column+i];
-        }
-        if ((sum == 4) || (sum == -4)) {
-            return sum;
-        }
-        return diagRowColUpWin(grid, row+1, column+1, height+1);
-    }
-
-    /**
-     * Determines if there's a four in a row in a ______ through recursion
-     * @param grid The current game state
-     * @param row The starting row
-     * @param column The starting column
-     * @param height The starting height
-     * @return An integer value that is negative, positive, or zero that respectively represents a player win, computer win, or no win
-     */
-    static int diagLeftUpWin(int[][][] grid, int row, int column, int height) {
-        int sum = 0;
-        if ((row > grid.length - 4) || (column < 3) || (height > grid.length - 4)) {
-            return 0;
-        }
-        for (int i = 0; i < 4; i++) {
-            sum+=grid[height+i][row+i][column-i];
-        }
-        if ((sum == 4) || (sum == -4)) {
-            return sum;
-        }
-        return diagRowColUpWin(grid, row+1, column-1, height+1);
-    }
-
-    /**
-     * Determines if there's a four in a row in a ______ through recursion
-     * @param grid The current game state
-     * @param row The starting row
-     * @param column The starting column
-     * @param height The starting height
-     * @return An integer value that is negative, positive, or zero that respectively represents a player win, computer win, or no win
-     */
-    static int rowDownWin(int[][][] grid, int row, int column, int height) {
-        int sum = 0;
-        if ((row > grid.length-4)|| (height < 3)) {
-            return 0;
-        }
-        for (int i = 0; i < 4; i++) {
-            sum+=grid[height-i][row+i][column];
-        }
-        if ((sum == 4) || (sum == -4)) {
-            return sum;
-        }
-        return rowDownWin(grid, row+1, column, height-1);
-    }
-
-    /**
-     * Determines if there's a four in a row in a ______ through recursion
-     * @param grid The current game state
-     * @param row The starting row
-     * @param column The starting column
-     * @param height The starting height
-     * @return An integer value that is negative, positive, or zero that respectively represents a player win, computer win, or no win
-     */
-    static int colDownWin(int[][][] grid, int row, int column, int height) {
-        int sum = 0;
-        if ((column > grid.length - 4) || (height < 3)) {
-            return 0;
-        }
-        for (int i = 0; i < 4; i++) {
-            sum+=grid[height-i][row][column+i];
-        }
-        if ((sum == 4) || (sum == -4)) {
-            return sum;
-        }
-        return colDownWin(grid, row, column+1, height-1);
-    }
-
-    /**
-     * Determines if there's a four in a row in a ______ through recursion
-     * @param grid The current game state
-     * @param row The starting row
-     * @param column The starting column
-     * @param height The starting height
-     * @return An integer value that is negative, positive, or zero that respectively represents a player win, computer win, or no win
-     */
-    static int colRowDownWin(int[][][] grid, int row, int column, int height) {
-        int sum = 0;
-        if ((row > grid.length - 4) || (column > grid.length - 4) || (height < 3)) {
-            return 0;
-        }
-        for (int i = 0; i < 4; i++) {
-            sum+=grid[height-i][row+i][column+i];
-        }
-        if ((sum == 4) || (sum == -4)) {
-            return sum;
-        }
-        return colRowDownWin(grid, row+1, column+1, height-1);
-    }
-    /**
-     * Determines if there's a four in a row in a ______ through recursion
-     * @param grid The current game state
-     * @param row The starting row
-     * @param column The starting column
-     * @param height The starting height
-     * @return An integer value that is negative, positive, or zero that respectively represents a player win, computer win, or no win
-     */
-    static int colRowDownBackWin(int[][][] grid, int row, int column, int height) {
-        int sum = 0;
-        if ((row > grid.length - 4) || (column < 3) || (height < 3)) {
-            return 0;
-        }
-        for (int i = 0; i < 4; i++) {
-            sum+=grid[height-i][row+i][column-i];
-        }
-        if ((sum == 4) || (sum == -4)) {
-            return sum;
-        }
-        return colRowDownBackWin(grid, row+1, column-1, height-1);
-    }
-
-    // END OF RECURSIVE WIN CHECKING METHODS
-
-
-
-
-
-    // START OF BEST MOVE RECURSIVE METHODS
-
-    // METHODS THAT CHECK FOR COMBINATIONS ON THE SAME HEIGHT
-    // Row: [UP, DOWN] Column: [LEFT, RIGHT] Diagonals: upRight, upLeft, downLeft, downRight
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int up(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-
-        if (row < 0) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return up(grid, row-1, column, height, combo+1, playerType);
-    }
-
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int down(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if (row >= grid.length) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return down(grid, row+1, column, height, combo+1, playerType);
-    }
-
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int left(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-
-        if (column < 0) {
-            return (int) (Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-
-            return (int) Math.pow(combo, combo) * playerType;
-        }
-        return left(grid, row, column-1, height, combo+1, playerType);
-    }
-
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int right(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if (column == grid.length) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return right(grid, row, column+1, height, combo+1, playerType);
-    }
-
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int upLeft(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if ((column < 0) || (row < 0)){
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return upLeft(grid, row-1, column-1, height, combo+1, playerType);
-    }
-
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int upRight(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if ((column == grid.length) || (row < 0)){
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return upRight(grid, row-1, column+1, height, combo+1, playerType);
-    }
-
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int downLeft(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if ((column < 0) || (row == grid.length)){
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return downLeft(grid, row+1, column-1, height, combo+1, playerType);
-    }
-
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int downRight(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if ((column == grid.length) || (row == grid.length)){
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return downRight(grid, row+1, column+1, height, combo+1, playerType);
-    }
-
-    // END OF SAME METHODS ON SAME HEIGHT
-
-
-
-
-
-    // START OF METHODS THAT CHECK VARYING HEIGHTS
-    // Height: [Above = +1, Down = -1], Rows: [Front = -1, Behind = +1], Columns: [Left = -1, Right = +1]
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int above(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if (height == grid.length) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return above(grid, row, column, height+1, combo+1, playerType);
-    }
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int aboveFront(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if ((height == grid.length) || (row < 0)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return aboveFront(grid, row-1, column, height+1, combo+1, playerType);
-    }
-
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int aboveBehind(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if ((height == grid.length) || (row == grid.length)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return aboveBehind(grid, row+1, column, height+1, combo+1, playerType);
-    }
-
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int aboveLeft(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if ((height == grid.length) || (column < 0)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return aboveLeft(grid, row, column-1, height+1, combo+1, playerType);
-    }
-
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int aboveRight(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if ((height == grid.length) || (column == grid.length)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return aboveRight(grid, row, column+1, height+1, combo+1, playerType);
-    }
-
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int aboveFrontLeft(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if ((height == grid.length) || (row < 0) || (column < 0)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return aboveFrontLeft(grid, row-1, column-1, height+1, combo+1, playerType);
-    }
-
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int aboveFrontRight(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if ((height == grid.length) || (row < 0) || (column == grid.length)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return aboveFrontRight(grid, row-1, column+1, height+1, combo+1, playerType);
-    }
-
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int aboveBehindLeft(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if ((height == grid.length) || (row == grid.length) || (column < 0)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return aboveBehindLeft(grid, row+1, column-1, height+1, combo+1, playerType);
-    }
-
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int aboveBehindRight(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if ((height == grid.length) || (row == grid.length) || (column == grid.length)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return aboveBehindRight(grid, row+1, column+1, height+1, combo+1, playerType);
-    }
-
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int below(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if ((height < 0)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return below(grid, row, column, height-1, combo+1, playerType);
-    }
-
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int belowFront(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if ((height < 0) || (row < 0)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return belowFront(grid, row-1, column, height-1, combo+1, playerType);
-    }
-
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int belowBehind(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if ((height < 0) || (row == grid.length)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return belowBehind(grid, row+1, column, height-1, combo+1, playerType);
-    }
-
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int belowLeft(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if ((height < 0) || (column < 0)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return belowLeft(grid, row, column-1, height-1, combo+1, playerType);
-    }
-
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int belowRight(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if ((height < 0) || (column == grid.length)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return belowRight(grid, row, column+1, height-1, combo+1, playerType);
-    }
-
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int belowFrontLeft(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if ((height < 0) || (row < 0) || (column < 0)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return belowFrontLeft(grid, row-1, column-1, height-1, combo+1, playerType);
-    }
-
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int belowFrontRight(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if ((height < 0) || (row < 0) || (column == grid.length)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return belowFrontRight(grid, row-1, column+1, height-1, combo+1, playerType);
-    }
-
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int belowBehindLeft(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if ((height < 0) || (row == grid.length) || (column < 0)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return belowBehindLeft(grid, row+1, column-1, height-1, combo+1, playerType);
-    }
-
-    /**
-     *
-     * @param grid
-     * @param row
-     * @param column
-     * @param height
-     * @param combo
-     * @param playerType
-     * @return
-     */
-    static int belowBehindRight(int[][][] grid, int row, int column, int height, int combo, int playerType) {
-        if ((height < 0) || (row == grid.length) || (column == grid.length)) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        if (grid[height][row][column] != playerType) {
-            return (int) Math.abs(Math.pow(combo, combo)) * playerType;
-        }
-        return belowBehindRight(grid, row+1, column+1, height-1, combo+1, playerType);
-    }
-
-
-
-
-
 }
