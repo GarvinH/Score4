@@ -2,7 +2,7 @@
  * Score 4 game (3d Connect 4). Has AI and player moves.
  * @author Albert Quon, Garvin Hui
  */
-import javax.swing.*;
+import javax.swing.*; // FIX THIS PLEASE
 
 class Score4 {
 
@@ -39,28 +39,6 @@ class Score4 {
         int numberTurns = 0;
 
         int board[][][] = new int[boardSize][boardSize][boardSize];
-
-        int[][][] testGrid = {
-                {       {-1,0,-1,-1},//floor 1
-                        {1,1,1,-1},
-                        {1,1,1,-1},
-                        {1,0,-1,1}},
-
-                {       {1,0,0,0},//floor 2
-                        {0,-1,0,0},
-                        {0,0,-1,0},
-                        {0,0,0,0}},
-
-                {       {0,0,0,0},//floor 3
-                        {0,0,0,0},
-                        {0,-1,1,0},
-                        {0,0,0,0}},
-
-                {       {0,0,0,0}, //floor4
-                        {0,0,0,0},
-                        {0,1,1,0},
-                        {0,0,0,0}}
-        };
 
         //Set up Grid Panel
         DisplayGrid grid = new DisplayGrid(board);
@@ -324,15 +302,6 @@ class Score4 {
                 }
             }
         }
-        for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
-                for (int k = 0; k < size; k++) {
-                    System.out.print(bestCombos[i][k][j]);
-                }
-                System.out.println("");
-            }
-            System.out.println("");
-        }
 
         // priority on the best move based on turn priority (if computer or player places first)
         // only if both moves are the same
@@ -373,9 +342,7 @@ class Score4 {
         int tempCombo; // stores the return value of the methods
         //determine if any diagonal combinations can be valid by finding the length of diagonals
         int diagLengthLeftRight = diagonalLengthLR(grid.length, row, column);
-        System.out.println(diagLengthLeftRight + "LR" + height + ";" + row + ";" + column);
         int diagLengthRightLeft = diagonalLengthRL(grid.length, row, column);
-        System.out.println(diagLengthRightLeft + "RL" + height + ";" + row + ";" + column);
         int diagHeightLeftRightRow = diagonalHeightRow(grid.length, row, height);
         int diagHeightRightLeftRow = diagonalHeightRowOpp(grid.length, row, height);
         int diagHeightLeftRightCol = diagonalHeightCol(grid.length, column, height);
@@ -437,7 +404,6 @@ class Score4 {
             if (Math.abs(tempCombo) > Math.abs(combo)) {
                 combo = tempCombo;
             }
-            System.out.println(combo + "c");
 
         }
 
