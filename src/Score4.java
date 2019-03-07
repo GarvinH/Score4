@@ -3,7 +3,7 @@
  * @author Albert Quon, Garvin Hui
  * 2019-03-07
  */
-import javax.swing.*; // FIX THIS PLEASE
+import javax.swing.*;
 
 class Score4 {
 
@@ -122,9 +122,9 @@ class Score4 {
     /**
      * Updates the board with computer and user input
      * @author Garvin Hui
-     * @param board
-     * @param coordinate
-     * @param player
+     * @param board Current board state
+     * @param coordinate Coordinate from a player
+     * @param player Current player
      * @return a boolean value indicating whether the board has been updated or not
      */
     public static boolean boardUpdate(int board[][][], int[] coordinate, int player)  {
@@ -1578,6 +1578,6 @@ class Score4 {
 
 
 
-
+/**********************END OF RECURSIVE HELPER METHODS********************************/
 
 }
