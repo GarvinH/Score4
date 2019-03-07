@@ -1,6 +1,7 @@
 /* [Score4.java]
  * Score 4 game (3d Connect 4). Has AI and player moves.
  * @author Albert Quon, Garvin Hui
+ * 2019-03-07
  */
 import javax.swing.*; // FIX THIS PLEASE
 
