@@ -6,11 +6,12 @@
 import javax.swing.*;
 
 class Score4 {
+    private static boolean placed = false;//placed variable that can be accessed by DisplayGrid class
 
     /**
      * Main Method for the game
      * @author Albert Quon & Garvin Hui
-     * @param args
+     * @param args String arguments (Not used in this program)
      */
     public static void main(String[] args) {
         boolean validSize;
@@ -19,104 +20,132 @@ class Score4 {
         do {
             validSize = true;
             for (int i = 0; i < boardSizeInput.length(); i++) {
-                if ((boardSizeInput.charAt(i) < '1') || (boardSizeInput.charAt(i) > '9')) {
+                if ((boardSizeInput.charAt(i) < '0') || (boardSizeInput.charAt(i) > '9')) {//making sure only an integer is entered
                     validSize = false;
                 }
             }
             if (!validSize) {
                 boardSizeInput = JOptionPane.showInputDialog("Please enter a valid board size:");
+            } else {
+                if (Integer.parseInt(boardSizeInput) < 4) {//making sure that the board is minimum size 4 (playable size)
+                    validSize = false;
+                }
             }
         } while (!validSize);
         boardSize = Integer.parseInt(boardSizeInput);
 
-        int playerTurn;//-1 will be AI turn and 1 will be player turn.
+        PlayerTurn turn = new PlayerTurn();//Refer to class below. -1 will be AI turn and 1 will be player turn.
         Object[] options = {"Player", "Computer"};
-        playerTurn = JOptionPane.showOptionDialog(null, "Choose who goes first.", "Choose player turn", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-        if (playerTurn == 0) {
-            playerTurn = 1;
+        turn.setPlayerTurn(JOptionPane.showOptionDialog(null, "Choose who goes first.", "Choose player turn", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]));
+        if (turn.getPlayerTurn() == 0) {
+            turn.setPlayerTurn(1);//Player goes first
         } else {
-            playerTurn = -1;
+            turn.setPlayerTurn(-1);//AI goes first
         }
         int numberTurns = 0;
 
         int board[][][] = new int[boardSize][boardSize][boardSize];
+        DisplayGrid.MouseClick.setWorld(board);
+
+        Object[] yesNo = {"Yes", "No"};//options for replaying game or not
+        int replay;
 
         //Set up Grid Panel
         DisplayGrid grid = new DisplayGrid(board);
         boolean quit = false;
-        boolean won = false;
+        boolean won;
         boolean aiPlaced;
         int win;
-        while (!quit && !won) {
-            //Display the grid on a Panel
-            grid.refresh();
-            if (playerTurn == 1) {
-                userMove(board);
-            } else {
+        System.out.println(turn.getPlayerTurn());
+        while (!quit) {
+            won = false;
+            while (!won) {
+                //Display the grid on a Panel
+                grid.refresh();
+                if (turn.getPlayerTurn() == 1) {
+                    //userMove(board);
+                } else {
 //                do {
 //                    aiPlaced = boardUpdate(board, turn(board), playerTurn);
 //                } while (!aiPlaced);
-                boardUpdate(board, turn(board, playerTurn), playerTurn);
-            }
-            win=win(board);
-            if (win == 2) {
-                System.out.println("tie!");
-                won = true;
-            } else if (win < 0) {
-                System.out.println("computer wins!");
-                won = true;
-            } else if (win > 0) {
-                won = true;
-                System.out.println("player wins!");
-            }
-            playerTurn *= -1;
-            numberTurns++;
+                    boardUpdate(board, turn(board, turn.getPlayerTurn()), turn.getPlayerTurn());
+                    turn.switchTurns();
+                }
+                win = win(board);
+                grid.refresh();
+                if (win == 2) {
+                    JOptionPane.showMessageDialog(null, "You tied!");
+                    won = true;
+                } else if (win < 0) {
+                    JOptionPane.showMessageDialog(null, "The computer won!");
+                    won = true;
+                } else if (win > 0) {
+                    won = true;
+                    JOptionPane.showMessageDialog(null, "You won!");
+                }
+                if (placed) {
+                    turn.switchTurns();
+                    numberTurns++;
+                    placed = false;
+                    System.out.println(numberTurns);
+                }
 
-            //Display the grid on a Panel
-            grid.refresh();
+                //Display the grid on a Panel
+                grid.refresh();
+            }
+            replay = JOptionPane.showOptionDialog(null, "Would you like to play again?", "Play again?", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, yesNo, yesNo[0]);
+            if (replay == 0) {
+                for (int i = 0; i < board.length; i++) {
+                    for (int j = 0; j < board[0].length; j++) {
+                        for (int k = 0; k < board[0][0].length; k++) {
+                            board[i][j][k] = 0;
+                        }
+                    }
+                }
+            } else {
+               quit = true;
+            }
+        }
+        grid.close();
+    }
+
+    static class PlayerTurn {
+        static int playerTurn;
+
+        /**
+         * This method allows for the changing of the value of playerTurn
+         * @Author Garvin Hui
+         * @param turn This variable is used in the initialization stage of the program and determines who goes first
+         */
+        void setPlayerTurn (int turn) {
+            playerTurn = turn;
+        }
+
+        /**
+         * This method allows other classes to view who's turn it is
+         * @Author Garvin Hui
+         * @return returns an integer value of playerTurn
+         */
+        static int getPlayerTurn () {
+            return playerTurn;
+        }
+
+        /**
+         * This method switches the turn of the players
+         * @Author Garvin Hui
+         */
+        void switchTurns () {
+            playerTurn *= -1;
         }
     }
 
     /**
-     * Validates User Input
-     * @author Garvin Hui
-     * @param board Current Game State
+     * This method allows for other classes to change the value of boolean placed
+     * @Author Garvin Hui
+     * @param isPlaced If the player placed a move or not
      */
-    public static void userMove (int board[][][]) {
-        String input = JOptionPane.showInputDialog("Please Enter Coordinates");
-        boolean valid;
-        boolean placed;
-        char letter;
-        do {
-            valid = true;
-            placed = false;
-            if (input == null) {
-                valid = false;
-            } else if (!input.contains(",")) {
-                valid = false;
-            }
-            if (valid) {
-                String[] userInput = input.split(",");
-                for (int i = 0; i < 2; i++) {
-                    for (int k = 0; k < userInput[i].length(); k++) {
-                        letter = userInput[i].charAt(k);
-                        if ((letter < '0') || (letter > '9')) {
-                            valid = false;
-                        }
-                    }
-                }
-                if (valid) {
-                    int[] coordinates = new int[2];
-                    for (int i = 0; i < 2; i++) {
-                        coordinates[i] = Integer.parseInt(userInput[i])-1;
-                    }
-                    placed = boardUpdate(board, coordinates, 1);
-                }
-            }
-            if (!placed) {
-                input = JOptionPane.showInputDialog("Please Enter Valid Point");
-            }
-        } while ((!valid) || (!placed));
+    public static void setPlaced(boolean isPlaced) {
+        placed = isPlaced;
     }
 
     /**
@@ -411,7 +440,7 @@ class Score4 {
         //checks all directions that vary in height
         tempCombo = above(grid, row, column, height, 0, player);
         tempCombo = below(grid, row, column, height, tempCombo, player);
-        
+
         if (Math.abs(tempCombo) > Math.abs(combo)) {
             combo = tempCombo;
         }
@@ -968,7 +997,7 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return up(grid, row-1, column, height, combo+1, playerType);
@@ -992,7 +1021,7 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return down(grid, row+1, column, height, combo+1, playerType);
@@ -1017,7 +1046,7 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return left(grid, row, column-1, height, combo+1, playerType);
@@ -1042,12 +1071,12 @@ class Score4 {
 
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return right(grid, row, column+1, height, combo+1, playerType);
     }
-    
+
     /**
      * Recursively checks for combinations through diagonally in decreasing rows and columns
      * @author Albert Quon
@@ -1066,7 +1095,7 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return upLeft(grid, row-1, column-1, height, combo+1, playerType);
@@ -1090,7 +1119,7 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return upRight(grid, row-1, column+1, height, combo+1, playerType);
@@ -1115,7 +1144,7 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return downLeft(grid, row+1, column-1, height, combo+1, playerType);
@@ -1140,7 +1169,7 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return downRight(grid, row+1, column+1, height, combo+1, playerType);
@@ -1171,12 +1200,12 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return above(grid, row, column, height+1, combo+1, playerType);
     }
-    
+
     /**
      * Recursively checks for combinations diagonally through increasing height and decreasing rows
      * @param grid Current Game State
@@ -1194,7 +1223,7 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return aboveFront(grid, row-1, column, height+1, combo+1, playerType);
@@ -1218,7 +1247,7 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return aboveBehind(grid, row+1, column, height+1, combo+1, playerType);
@@ -1242,7 +1271,7 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return aboveLeft(grid, row, column-1, height+1, combo+1, playerType);
@@ -1266,7 +1295,7 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return aboveRight(grid, row, column+1, height+1, combo+1, playerType);
@@ -1290,7 +1319,7 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return aboveFrontLeft(grid, row-1, column-1, height+1, combo+1, playerType);
@@ -1313,7 +1342,7 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return aboveFrontRight(grid, row-1, column+1, height+1, combo+1, playerType);
@@ -1336,7 +1365,7 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return aboveBehindLeft(grid, row+1, column-1, height+1, combo+1, playerType);
@@ -1359,7 +1388,7 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return aboveBehindRight(grid, row+1, column+1, height+1, combo+1, playerType);
@@ -1430,7 +1459,7 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return belowBehind(grid, row+1, column, height-1, combo+1, playerType);
@@ -1454,7 +1483,7 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return belowLeft(grid, row, column-1, height-1, combo+1, playerType);
@@ -1477,7 +1506,7 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return belowRight(grid, row, column+1, height-1, combo+1, playerType);
@@ -1501,7 +1530,7 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return belowFrontLeft(grid, row-1, column-1, height-1, combo+1, playerType);
@@ -1524,7 +1553,7 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return belowFrontRight(grid, row-1, column+1, height-1, combo+1, playerType);
@@ -1547,7 +1576,7 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return belowBehindLeft(grid, row+1, column-1, height-1, combo+1, playerType);
@@ -1570,7 +1599,7 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
                 combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+            }
             return combo*playerType;
         }
         return belowBehindRight(grid, row+1, column+1, height-1, combo+1, playerType);
