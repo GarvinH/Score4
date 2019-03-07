@@ -56,7 +56,6 @@ class Score4 {
         boolean won;
         boolean aiPlaced;
         int win;
-        System.out.println(turn.getPlayerTurn());
         while (!quit) {
             won = false;
             while (!won) {
@@ -70,24 +69,24 @@ class Score4 {
 //                } while (!aiPlaced);
                     boardUpdate(board, turn(board, turn.getPlayerTurn()), turn.getPlayerTurn());
                     turn.switchTurns();
+                    numberTurns++;
                 }
                 win = win(board);
                 grid.refresh();
                 if (win == 2) {
-                    JOptionPane.showMessageDialog(null, "You tied!");
+                    JOptionPane.showMessageDialog(null, "You tied! Game took: " + numberTurns + " turns.");
                     won = true;
                 } else if (win < 0) {
-                    JOptionPane.showMessageDialog(null, "The computer won!");
+                    JOptionPane.showMessageDialog(null, "The computer won! Game took: " + numberTurns + " turns.");
                     won = true;
                 } else if (win > 0) {
                     won = true;
-                    JOptionPane.showMessageDialog(null, "You won!");
+                    JOptionPane.showMessageDialog(null, "You won! Game took: " + numberTurns + " turns.");
                 }
                 if (placed) {
                     turn.switchTurns();
                     numberTurns++;
                     placed = false;
-                    System.out.println(numberTurns);
                 }
 
                 //Display the grid on a Panel
