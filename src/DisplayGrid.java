@@ -33,7 +33,7 @@ class DisplayGrid {
 
         System.out.println("Map size: "+world.length+" by "+world[0].length + " by " + world[0][0].length + "\nScreen size: "+ maxX +"x"+maxY+ " Ratio: " + GridToScreenRatio);
 
-        this.frame = new JFrame("Map of World");
+        this.frame = new JFrame("Score 4");
 
         GridAreaPanel worldPanel = new GridAreaPanel();
         worldPanel.addMouseListener(new MouseClick());//Creating the mouse clicking object
@@ -58,7 +58,6 @@ class DisplayGrid {
     //Author Garvin Hui
     class GridAreaPanel extends JPanel {
         public void paintComponent(Graphics g) {
-            //super.repaint();
 
             setDoubleBuffered(true);
             g.setColor(Color.BLACK);
@@ -67,7 +66,7 @@ class DisplayGrid {
             int rowY;
             int rowX;
             Point cursor = MouseInfo.getPointerInfo().getLocation();
-            SwingUtilities.convertPointFromScreen(cursor, this);
+            SwingUtilities.convertPointFromScreen(cursor, this);//allows for checking of mouse location (hovering for preview)
             double cursorX = cursor.getX();
             double cursorY = cursor.getY();
 
@@ -75,13 +74,14 @@ class DisplayGrid {
                 for (int j = 0; j < world[0].length; j = j + 1) {
                     for (int k = 0; k < world[0][0].length; k++) {
                         rowY = j * GridToScreenRatio + GridToScreenRatio;
-                        rowX = k * GridToScreenRatio + counter * (world.length - 1) * 2 * GridToScreenRatio + 2;
+                        rowX = k * GridToScreenRatio + counter * (world.length - 1) * 2 * GridToScreenRatio + 2;//helps create next levels clearly
                         if (world[i][j][k] == 1)    //This block can be changed to match character-color pairs
                             g.setColor(Color.RED);
                         else if (world[i][j][k] == -1)
                             g.setColor(Color.YELLOW);
                         else
                             g.setColor(Color.WHITE);
+                        //draws each board spaces
                         g.fillRect(rowX, rowY + row*(GridToScreenRatio*(world.length+1)), GridToScreenRatio, GridToScreenRatio);
 
                         //This is for hovering mouse preview
@@ -92,9 +92,10 @@ class DisplayGrid {
                             }
                         }
 
+                        //outlines each box as to clarify borders
                         g.setColor(Color.BLACK);
                         g.drawRect(rowX, rowY + row*(GridToScreenRatio*(world.length+1)), GridToScreenRatio, GridToScreenRatio);
-                        g.drawString("Level " + (i + 1), 2 * GridToScreenRatio + counter * (world.length - 1) * 2 * GridToScreenRatio + 2, GridToScreenRatio/2+ row*(GridToScreenRatio*(world.length+1)));
+                        g.drawString("Level " + (i + 1), 2 * GridToScreenRatio + counter * (world.length - 1) * 2 * GridToScreenRatio + 2, GridToScreenRatio/2+ row*(GridToScreenRatio*(world.length+1)));//displays the level of board in string form
                     }
                 }
                 if (counter > ((int)Math.sqrt(world.length)-1)) {
@@ -136,6 +137,8 @@ class DisplayGrid {
                         for (int k = 0; k < world.length; k++) {
                             rowY = j * GridToScreenRatio + GridToScreenRatio;
                             rowX = k * GridToScreenRatio + counter * (world.length - 1) * 2 * GridToScreenRatio + 2;
+
+                            //this section checks if the mouse is clicking in a valid area
                             if ((x > rowX) && (x < rowX + GridToScreenRatio)) {
                                 if ((y > rowY + row*(GridToScreenRatio*(world.length+1))) && (y < rowY + row*(GridToScreenRatio*(world.length+1)) + GridToScreenRatio)) {
                                     coordinates[0] = k;

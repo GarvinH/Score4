@@ -19,9 +19,16 @@ class Score4 {
         String boardSizeInput = JOptionPane.showInputDialog("Please enter the board size:");
         do {
             validSize = true;
-            for (int i = 0; i < boardSizeInput.length(); i++) {
-                if ((boardSizeInput.charAt(i) < '0') || (boardSizeInput.charAt(i) > '9')) {//making sure only an integer is entered
-                    validSize = false;
+            if (boardSizeInput == null) {
+                validSize = false;
+            } else if (boardSizeInput.equals("")) {
+                validSize = false;
+            }
+            if (validSize) {
+                for (int i = 0; i < boardSizeInput.length(); i++) {
+                    if ((boardSizeInput.charAt(i) < '0') || (boardSizeInput.charAt(i) > '9')) {//making sure only an integer is entered
+                        validSize = false;
+                    }
                 }
             }
             if (!validSize) {
@@ -60,12 +67,7 @@ class Score4 {
             while (!won) {
                 //Display the grid on a Panel
                 grid.refresh();
-                if (turn.getPlayerTurn() == 1) {
-                    //userMove(board);
-                } else {
-//                do {
-//                    aiPlaced = boardUpdate(board, turn(board), playerTurn);
-//                } while (!aiPlaced);
+                if (turn.getPlayerTurn() != 1) {
                     boardUpdate(board, turn(board, turn.getPlayerTurn()), turn.getPlayerTurn());
                     turn.switchTurns();
                     numberTurns++;
@@ -168,9 +170,6 @@ class Score4 {
         } else if ((coordinate[0] > board.length) || (coordinate[1] > board.length)){
             valid = false;
         }
-        /*if (board[board.length-1][coordinate[1]][coordinate[0]] != 0) {
-            valid = false;
-        }*/
         if (valid) {
             while ((!placed) && (level < board.length)) {
                 if ((board[level][coordinate[1]][coordinate[0]] == 0)) {
