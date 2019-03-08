@@ -75,12 +75,13 @@ class DisplayGrid {
                     for (int k = 0; k < world[0][0].length; k++) {
                         rowY = j * GridToScreenRatio + GridToScreenRatio;
                         rowX = k * GridToScreenRatio + counter * (world.length - 1) * 2 * GridToScreenRatio + 2;//helps create next levels clearly
-                        if (world[i][j][k] == 1)    //This block can be changed to match character-color pairs
+                        if (world[i][j][k] == 1) {
                             g.setColor(Color.RED);
-                        else if (world[i][j][k] == -1)
+                        } else if (world[i][j][k] == -1) {
                             g.setColor(Color.YELLOW);
-                        else
+                        } else {
                             g.setColor(Color.WHITE);
+                        }
                         //draws each board spaces
                         g.fillRect(rowX, rowY + row*(GridToScreenRatio*(world.length+1)), GridToScreenRatio, GridToScreenRatio);
 
@@ -127,7 +128,7 @@ class DisplayGrid {
         public void mouseClicked(MouseEvent click) {
             x = click.getX();
             y = click.getY();
-            if (Score4.PlayerTurn.getPlayerTurn() == 1) {
+            if (Score4.getPlayerTurn() == 1) {
                 int counter = 0;
                 int row = 0;
                 int rowX;

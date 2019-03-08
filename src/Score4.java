@@ -7,6 +7,7 @@ import javax.swing.JOptionPane;
 
 class Score4 {
     private static boolean placed = false;//placed variable that can be accessed by DisplayGrid class
+    static int playerTurn;
 
     /**
      * Main Method for the game
@@ -41,13 +42,12 @@ class Score4 {
         } while (!validSize);
         boardSize = Integer.parseInt(boardSizeInput);
 
-        PlayerTurn turn = new PlayerTurn();//Refer to class below. -1 will be AI turn and 1 will be player turn.
         Object[] options = {"Player", "Computer"};
-        turn.setPlayerTurn(JOptionPane.showOptionDialog(null, "Choose who goes first.", "Choose player turn", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]));
-        if (turn.getPlayerTurn() == 0) {
-            turn.setPlayerTurn(1);//Player goes first
+        setPlayerTurn(JOptionPane.showOptionDialog(null, "Choose who goes first.", "Choose player turn", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]));
+        if (getPlayerTurn() == 0) {
+            setPlayerTurn(1);//Player goes first
         } else {
-            turn.setPlayerTurn(-1);//AI goes first
+            setPlayerTurn(-1);//AI goes first
         }
         int numberTurns = 0;
 
@@ -67,9 +67,9 @@ class Score4 {
             while (!won) {
                 //Display the grid on a Panel
                 grid.refresh();
-                if (turn.getPlayerTurn() != 1) {
-                    boardUpdate(board, turn(board, turn.getPlayerTurn()), turn.getPlayerTurn());
-                    turn.switchTurns();
+                if (getPlayerTurn() != 1) {
+                    boardUpdate(board, turn(board, getPlayerTurn()), getPlayerTurn());
+                    switchTurns();
                     numberTurns++;
                 }
                 win = win(board);
@@ -85,7 +85,7 @@ class Score4 {
                     JOptionPane.showMessageDialog(null, "You won! Game took: " + numberTurns + " turns.");
                 }
                 if (placed) {
-                    turn.switchTurns();
+                    switchTurns();
                     numberTurns++;
                     placed = false;
                 }
@@ -109,38 +109,30 @@ class Score4 {
         grid.close();
     }
 
-    /*
-     * Player turn objects allow for other classes to access this data
-     * Author Garvin Hui
+    /**
+     * This method allows for the changing of the value of playerTurn
+     * @Author Garvin Hui
+     * @param turn This variable is used in the initialization stage of the program and determines who goes first
      */
-    static class PlayerTurn {
-        static int playerTurn;
+    static void setPlayerTurn (int turn) {
+        playerTurn = turn;
+    }
 
-        /**
-         * This method allows for the changing of the value of playerTurn
-         * @Author Garvin Hui
-         * @param turn This variable is used in the initialization stage of the program and determines who goes first
-         */
-        void setPlayerTurn (int turn) {
-            playerTurn = turn;
-        }
+    /**
+     * This method allows other classes to view who's turn it is
+     * @Author Garvin Hui
+     * @return returns an integer value of playerTurn
+     */
+    static int getPlayerTurn () {
+        return playerTurn;
+    }
 
-        /**
-         * This method allows other classes to view who's turn it is
-         * @Author Garvin Hui
-         * @return returns an integer value of playerTurn
-         */
-        static int getPlayerTurn () {
-            return playerTurn;
-        }
-
-        /**
-         * This method switches the turn of the players
-         * @Author Garvin Hui
-         */
-        void switchTurns () {
-            playerTurn *= -1;
-        }
+    /**
+     * This method switches the turn of the players
+     * @Author Garvin Hui
+     */
+    static void switchTurns () {
+        playerTurn *= -1;
     }
 
     /**
