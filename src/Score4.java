@@ -1,16 +1,17 @@
 /* [Score4.java]
- * Score 4 game (3d Connect 4). Has AI and player moves.
+ * Score 4 game (3D Connect 4). Has AI and player moves.
  * @author Albert Quon, Garvin Hui
  * 2019-03-07
  */
-import javax.swing.*;
+import javax.swing.JOptionPane;
 
 class Score4 {
+    private static boolean placed = false;//placed variable that can be accessed by DisplayGrid class
 
     /**
      * Main Method for the game
-     * @author Albert Quon & Garvin Hui
-     * @param args
+     * @author Garvin Hui
+     * @param args String arguments (Not used in this program)
      */
     public static void main(String[] args) {
         boolean validSize;
@@ -19,104 +20,134 @@ class Score4 {
         do {
             validSize = true;
             for (int i = 0; i < boardSizeInput.length(); i++) {
-                if ((boardSizeInput.charAt(i) < '1') || (boardSizeInput.charAt(i) > '9')) {
+                if ((boardSizeInput.charAt(i) < '0') || (boardSizeInput.charAt(i) > '9')) {//making sure only an integer is entered
                     validSize = false;
                 }
             }
             if (!validSize) {
                 boardSizeInput = JOptionPane.showInputDialog("Please enter a valid board size:");
+            } else {
+                if (Integer.parseInt(boardSizeInput) < 4) {//making sure that the board is minimum size 4 (playable size)
+                    validSize = false;
+                }
             }
         } while (!validSize);
         boardSize = Integer.parseInt(boardSizeInput);
 
-        int playerTurn;//-1 will be AI turn and 1 will be player turn.
+        PlayerTurn turn = new PlayerTurn();//Refer to class below. -1 will be AI turn and 1 will be player turn.
         Object[] options = {"Player", "Computer"};
-        playerTurn = JOptionPane.showOptionDialog(null, "Choose who goes first.", "Choose player turn", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-        if (playerTurn == 0) {
-            playerTurn = 1;
+        turn.setPlayerTurn(JOptionPane.showOptionDialog(null, "Choose who goes first.", "Choose player turn", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]));
+        if (turn.getPlayerTurn() == 0) {
+            turn.setPlayerTurn(1);//Player goes first
         } else {
-            playerTurn = -1;
+            turn.setPlayerTurn(-1);//AI goes first
         }
         int numberTurns = 0;
 
         int board[][][] = new int[boardSize][boardSize][boardSize];
+        DisplayGrid.MouseClick.setWorld(board);
+
+        Object[] yesNo = {"Yes", "No"};//options for replaying game or not
+        int replay;
 
         //Set up Grid Panel
         DisplayGrid grid = new DisplayGrid(board);
         boolean quit = false;
-        boolean won = false;
-        boolean aiPlaced;
+        boolean won;
         int win;
-        while (!quit && !won) {
-            //Display the grid on a Panel
-            grid.refresh();
-            if (playerTurn == 1) {
-                userMove(board);
-            } else {
+        while (!quit) {
+            won = false;
+            while (!won) {
+                //Display the grid on a Panel
+                grid.refresh();
+                if (turn.getPlayerTurn() == 1) {
+                    //userMove(board);
+                } else {
 //                do {
 //                    aiPlaced = boardUpdate(board, turn(board), playerTurn);
 //                } while (!aiPlaced);
-                boardUpdate(board, turn(board, playerTurn), playerTurn);
-            }
-            win=win(board);
-            if (win == 2) {
-                System.out.println("tie!");
-                won = true;
-            } else if (win < 0) {
-                System.out.println("computer wins!");
-                won = true;
-            } else if (win > 0) {
-                won = true;
-                System.out.println("player wins!");
-            }
-            playerTurn *= -1;
-            numberTurns++;
+                    boardUpdate(board, turn(board, turn.getPlayerTurn()), turn.getPlayerTurn());
+                    turn.switchTurns();
+                    numberTurns++;
+                }
+                win = win(board);
+                grid.refresh();
+                if (win == 2) {
+                    JOptionPane.showMessageDialog(null, "You tied! Game took: " + numberTurns + " turns.");
+                    won = true;
+                } else if (win < 0) {
+                    JOptionPane.showMessageDialog(null, "The computer won! Game took: " + numberTurns + " turns.");
+                    won = true;
+                } else if (win > 0) {
+                    won = true;
+                    JOptionPane.showMessageDialog(null, "You won! Game took: " + numberTurns + " turns.");
+                }
+                if (placed) {
+                    turn.switchTurns();
+                    numberTurns++;
+                    placed = false;
+                }
 
-            //Display the grid on a Panel
-            grid.refresh();
+                //Display the grid on a Panel
+                grid.refresh();
+            }
+            replay = JOptionPane.showOptionDialog(null, "Would you like to play again?", "Play again?", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, yesNo, yesNo[0]);
+            if (replay == 0) {
+                for (int i = 0; i < board.length; i++) {
+                    for (int j = 0; j < board[0].length; j++) {
+                        for (int k = 0; k < board[0][0].length; k++) {
+                            board[i][j][k] = 0;
+                        }
+                    }
+                }
+            } else {
+                quit = true;
+            }
+        }
+        grid.close();
+    }
+
+    /*
+     * Player turn objects allow for other classes to access this data
+     * Author Garvin Hui
+     */
+    static class PlayerTurn {
+        static int playerTurn;
+
+        /**
+         * This method allows for the changing of the value of playerTurn
+         * @Author Garvin Hui
+         * @param turn This variable is used in the initialization stage of the program and determines who goes first
+         */
+        void setPlayerTurn (int turn) {
+            playerTurn = turn;
+        }
+
+        /**
+         * This method allows other classes to view who's turn it is
+         * @Author Garvin Hui
+         * @return returns an integer value of playerTurn
+         */
+        static int getPlayerTurn () {
+            return playerTurn;
+        }
+
+        /**
+         * This method switches the turn of the players
+         * @Author Garvin Hui
+         */
+        void switchTurns () {
+            playerTurn *= -1;
         }
     }
 
     /**
-     * Validates User Input
-     * @author Garvin Hui
-     * @param board Current Game State
+     * This method allows for other classes to change the value of boolean placed
+     * @Author Garvin Hui
+     * @param isPlaced If the player placed a move or not
      */
-    public static void userMove (int board[][][]) {
-        String input = JOptionPane.showInputDialog("Please Enter Coordinates");
-        boolean valid;
-        boolean placed;
-        char letter;
-        do {
-            valid = true;
-            placed = false;
-            if (input == null) {
-                valid = false;
-            } else if (!input.contains(",")) {
-                valid = false;
-            }
-            if (valid) {
-                String[] userInput = input.split(",");
-                for (int i = 0; i < 2; i++) {
-                    for (int k = 0; k < userInput[i].length(); k++) {
-                        letter = userInput[i].charAt(k);
-                        if ((letter < '0') || (letter > '9')) {
-                            valid = false;
-                        }
-                    }
-                }
-                if (valid) {
-                    int[] coordinates = new int[2];
-                    for (int i = 0; i < 2; i++) {
-                        coordinates[i] = Integer.parseInt(userInput[i])-1;
-                    }
-                    placed = boardUpdate(board, coordinates, 1);
-                }
-            }
-            if (!placed) {
-                input = JOptionPane.showInputDialog("Please Enter Valid Point");
-            }
-        } while ((!valid) || (!placed));
+    public static void setPlaced(boolean isPlaced) {
+        placed = isPlaced;
     }
 
     /**
@@ -169,6 +200,7 @@ class Score4 {
     static int win(int[][][] grid) {
         int checkWin = 0;
         boolean space = false;
+        // checks if there's a tie
         for (int i = 0; i < grid.length; i++) {
             for (int j = 0; j < grid.length; j++) {
                 for (int k = 0; k < grid.length; k++) {
@@ -209,7 +241,7 @@ class Score4 {
                 }
             }
         } else {
-            checkWin = 2; // indicates a tie
+            return 2; // indicates a tie
         }
         return checkWin;
     }
@@ -226,11 +258,14 @@ class Score4 {
         int[][][] playerCopy = new int[size][size][size];
         int[][][] compCopy = new int[size][size][size];
         int[][][] bestCombos = new int[size][size][size];
+        int[][][] bestPlayerMoves = new int[size][size][size];
+        int[][][] bestCompMoves = new int[size][size][size];
         int[] coordinate = new int[2];
-        int playerCombo, compCombo;
+        int[] playerInfo, compInfo;
+        int playerCombo, compCombo, compMove, playerMove;
         int sameCombo = 0, bestCombo = 0;
-        boolean placed = false;
-        int bestMove = 0; // stores the highest value
+        boolean placed = false, movePriority = false;
+        int bestCompMove = 0, bestPlayerMove = 0; // stores the highest value
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
@@ -240,15 +275,24 @@ class Score4 {
                 }
             }
         }
+        // loop through the grid and find all possible moves that the player and computer can do next
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 for (int k = 0; k < size; k++) {
-                    if (grid[i][j][k] == 0) {
-                        if ((i == 0)) { // bottom floor
+                    if (grid[i][j][k] == 0) { // checks if spot is empty
+                        if ((i == 0)) { // bottom floor, any move is valid
+                            //create a temporary move
                             compCopy[i][j][k] = -1;
                             playerCopy[i][j][k] = 1;
-                            playerCombo = checkCombos(playerCopy, j, k, i, 1);
-                            compCombo = checkCombos(compCopy, j, k, i, -1);
+                            // call on the recursive methods to determine the highest combination possible for each player
+                            // and also determine how many combinations are favoured here
+                            playerInfo = checkCombos(playerCopy, j, k, i, 1);
+                            compInfo = checkCombos(compCopy, j, k, i, -1);
+                            // assign each variable
+                            compMove = compInfo[0];
+                            compCombo = compInfo[1];
+                            playerCombo = playerInfo[1];
+                            playerMove = playerInfo[0];
 
                             // check if this is the highest combination found
                             if (playerCombo > Math.abs(bestCombo)) {
@@ -257,25 +301,47 @@ class Score4 {
                             if (Math.abs(compCombo) > Math.abs(bestCombo)) {
                                 bestCombo = compCombo;
                             }
-                            // check if this is the best combo for the spot on the grid
+                            // if both combinations are the same and its the highest value, save it
+                            if (playerCombo == Math.abs(compCombo)) {
+                                if (playerCombo == bestCombo) {
+                                    sameCombo = playerCombo;
+                                }
+                            }
+
+                            // maps the best combo found from player and computer
                             if (playerCombo > Math.abs(compCombo)) {
                                 bestCombos[i][j][k] = playerCombo;
                             } else if (Math.abs(compCombo) > playerCombo) {
                                 bestCombos[i][j][k] = compCombo;
                             }
-                            // if player's and computer's move both match
-                            if (playerCombo == Math.abs(compCombo)) {
-                                sameCombo = playerCombo;
-                            }
 
+                            // save the score that the computer and player have on the grid
+                            bestCompMoves[i][j][k] = compMove;
+                            bestPlayerMoves[i][j][k] = playerMove;
+                            // determines if this is the highest score for both players
+                            if (playerMove > bestPlayerMove) {
+                                bestPlayerMove = playerMove;
+                            } else if (compMove < bestCompMove) {
+                                bestCompMove = compMove;
+                            }
+                            // remove the temporary move
                             compCopy[i][j][k] = 0;
                             playerCopy[i][j][k] = 0;
 
-                        } else if ((grid[i-1][j][k] != 0)) { // bottom floor
+                        } else if ((grid[i-1][j][k] != 0)) { // checks if its on top of a block
+                            //create a temporary move
                             compCopy[i][j][k] = -1;
                             playerCopy[i][j][k] = 1;
-                            playerCombo = checkCombos(playerCopy, j, k, i, 1);
-                            compCombo = checkCombos(compCopy, j, k, i, -1);
+                            // call on the recursive methods to determine the highest combination possible for each player
+                            // and also determine how many combinations are favoured here
+                            playerInfo = checkCombos(playerCopy, j, k, i, 1);
+                            compInfo = checkCombos(compCopy, j, k, i, -1);
+                            // assign each variable
+                            compMove = compInfo[0];
+                            compCombo = compInfo[1];
+                            playerCombo = playerInfo[1];
+                            playerMove = playerInfo[0];
+
                             // check if this is the highest combination found
                             if (playerCombo > Math.abs(bestCombo)) {
                                 bestCombo = playerCombo;
@@ -283,17 +349,30 @@ class Score4 {
                             if (Math.abs(compCombo) > Math.abs(bestCombo)) {
                                 bestCombo = compCombo;
                             }
-                            // check if this is the best combo for the spot on the grid
+                            // if both combinations are the same and its the highest value, save it
+                            if (playerCombo == Math.abs(compCombo)) {
+                                if (playerCombo == bestCombo) {
+                                    sameCombo = playerCombo;
+                                }
+                            }
+
+                            // maps the best combo found from player and computer
                             if (playerCombo > Math.abs(compCombo)) {
                                 bestCombos[i][j][k] = playerCombo;
                             } else if (Math.abs(compCombo) > playerCombo) {
                                 bestCombos[i][j][k] = compCombo;
                             }
-                            if (playerCombo == Math.abs(compCombo)) {
-                                sameCombo = playerCombo;
 
+                            // save the score that the computer and player have on the grid
+                            bestCompMoves[i][j][k] = compMove;
+                            bestPlayerMoves[i][j][k] = playerMove;
+                            // determines if this is the highest score for both players
+                            if (playerMove > bestPlayerMove) {
+                                bestPlayerMove = playerMove;
+                            } else if (compMove < bestCompMove) {
+                                bestCompMove = compMove;
                             }
-
+                            // remove the temporary move
                             compCopy[i][j][k] = 0;
                             playerCopy[i][j][k] = 0;
 
@@ -305,17 +384,27 @@ class Score4 {
         }
 
         // priority on the best move based on turn priority (if computer or player places first)
-        // only if both moves are the same
-        if (sameCombo == Math.abs(bestCombo) && (sameCombo > 3)) {
-            if ((turn == -1) && (bestCombo > 0)) {
-                bestCombo *= (-1);
-            }
+        // if combinations are the same as the best, then we prioritize the most combinations possible which is based on score
+        if (sameCombo == Math.abs(bestCombo)) {
+            movePriority = true;
         }
-
+        // place the move
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 for (int k = 0; k < size; k++) {
-                    if (bestCombos[i][j][k] == bestCombo && !placed) {
+                    if ((movePriority) && (turn == 1) && (placed)) { // if player has priority and combinations are the same, go for its own best move
+                        if (bestPlayerMoves[i][j][k] == bestPlayerMove) {
+                            placed = true;
+                            coordinate[0] = k;
+                            coordinate[1] = grid.length-j-1;
+                        }
+                    } else if ((movePriority) && (turn == -1) && (placed))  { // if computer has priority and combinations are the same, go for its own best move
+                        if (bestCompMoves[i][j][k] == bestCompMove) {
+                            placed = true;
+                            coordinate[0] = k;
+                            coordinate[1] = grid.length-j-1;
+                        }
+                    } else if (bestCombos[i][j][k] == bestCombo && !placed) { // else, go for the highest combination possible (block off player's or advance computer's
                         placed = true;
                         coordinate[0] = k;
                         coordinate[1] = grid.length-j-1;
@@ -329,19 +418,23 @@ class Score4 {
 
 
     /**
-     * Checks all possible fourteen locations around a move, gives a score based on the number of combinations present
+     * Checks all possible directions around a possible move, gives a score based on the number of combinations present
+     * Calls on recursive methods that run until out of bounds, reaches a player move, or reaches an empty space (will run less than 5 per method)
      * @author Albert Quon
      * @param grid Current game state
      * @param row Current row
      * @param column Current column
      * @param height Current height
      * @param player Computer or player
-     * @return Highest combination found for a certain move
+     * @return Highest combination found for a certain move and a score based on how many combinations the move can provide
      */
-    static int checkCombos(int[][][] grid, int row, int column, int height, int player) {
+    static int[] checkCombos(int[][][] grid, int row, int column, int height, int player) {
         int combo = 0; // highest combo for the player
         int tempCombo; // stores the return value of the methods
-        //determine if any diagonal combinations can be valid by finding the length of diagonals
+        int score = 0;
+        int[] scoreCombo = new int[2];
+        //determine if any diagonal combinations can be valid by finding the length of diagonals, if diagonal length is shorter
+        //than 4, then no possible combination can be found and the score should not be based on it
         int diagLengthLeftRight = diagonalLengthLR(grid.length, row, column);
         int diagLengthRightLeft = diagonalLengthRL(grid.length, row, column);
         int diagHeightLeftRightRow = diagonalHeightRow(grid.length, row, height);
@@ -351,112 +444,130 @@ class Score4 {
 
         // checks all directions on the same plane/height
         // methods are grouped by complimentary/opposite directions
-        //entire column
+        // entire column
         tempCombo = left(grid, row, column, height, 0, player);
-        tempCombo = right(grid, row, column, height, tempCombo, player);
+        tempCombo = right(grid, row, column, height, Math.abs(tempCombo), player);
         if (Math.abs(tempCombo) > Math.abs(combo)) {
             combo = tempCombo;
         }
-
+        score += tempCombo;
         //entire row
         tempCombo = up(grid, row, column, height,0, player);
-        tempCombo = down(grid, row, column, height, tempCombo, player);
+        tempCombo = down(grid, row, column, height, Math.abs(tempCombo), player);
         if (tempCombo > combo) {
             combo = tempCombo;
         }
-        // diagonals will be considered if diagonal wins are possible
+        score += tempCombo;
+
+        // diagonals will be considered if diagonal wins are possible (top left to bottom right)
         if (diagLengthLeftRight > 3) {
 
             tempCombo = upLeft(grid, row, column, height, 0, player);
-            tempCombo = downRight(grid, row, column, height, tempCombo, player);
+            tempCombo = downRight(grid, row, column, height, Math.abs(tempCombo), player);
             if (tempCombo > combo) {
                 combo = tempCombo;
             }
+            score += tempCombo;
 
             tempCombo = aboveFrontLeft(grid, row, column, height, 0, player);
-            tempCombo = belowBehindRight(grid, row, column, height, tempCombo, player);
+            tempCombo = belowBehindRight(grid, row, column, height, Math.abs(tempCombo), player);
             if (Math.abs(tempCombo) > Math.abs(combo)) {
                 combo = tempCombo;
             }
+            score += tempCombo;
 
             tempCombo = aboveBehindLeft(grid, row, column, height, 0, player);
-            tempCombo = belowFrontRight(grid, row, column, height, tempCombo, player);
+            tempCombo = belowFrontRight(grid, row, column, height, Math.abs(tempCombo), player);
 
             if (Math.abs(tempCombo) > Math.abs(combo)) {
                 combo = tempCombo;
             }
+            score += tempCombo;
+
         }
-        // diagonals will be considered if diagonal wins are possible
+
+        // diagonals will be considered if diagonal wins are possible (top right to bottom left)
         if (diagLengthRightLeft > 3) {
             tempCombo = upRight(grid, row, column, height, 0, player);
-            tempCombo = downLeft(grid, row, column, height, tempCombo, player);
+            tempCombo = downLeft(grid, row, column, height, Math.abs(tempCombo), player);
             if (Math.abs(tempCombo) > Math.abs(combo)) {
                 combo = tempCombo;
             }
+            score += tempCombo;
             tempCombo = aboveFrontRight(grid, row, column, height, 0, player);
-            tempCombo = belowBehindLeft(grid, row, column, height, tempCombo, player);
+            tempCombo = belowBehindLeft(grid, row, column, height, Math.abs(tempCombo), player);
 
             if (Math.abs(tempCombo) > Math.abs(combo)) {
                 combo = tempCombo;
             }
+            score += tempCombo;
+
             tempCombo = aboveBehindRight(grid, row, column, height, 0, player);
-            tempCombo = belowFrontLeft(grid, row, column, height, tempCombo, player);
+            tempCombo = belowFrontLeft(grid, row, column, height, Math.abs(tempCombo), player);
 
             if (Math.abs(tempCombo) > Math.abs(combo)) {
                 combo = tempCombo;
             }
+            score += tempCombo;
 
         }
 
         //checks all directions that vary in height
         tempCombo = above(grid, row, column, height, 0, player);
-        tempCombo = below(grid, row, column, height, tempCombo, player);
-        
+        tempCombo = below(grid, row, column, height, Math.abs(tempCombo), player);
+
         if (Math.abs(tempCombo) > Math.abs(combo)) {
             combo = tempCombo;
         }
+        score += tempCombo;
 
         // checks from increasing row and height, diagonally with decreasing row and height
         if (diagHeightLeftRightRow > 3) {
             tempCombo = aboveFront(grid, row, column, height, 0, player);
-            tempCombo = belowBehind(grid, row, column, height, tempCombo, player);
+            tempCombo = belowBehind(grid, row, column, height, Math.abs(tempCombo), player);
             if (Math.abs(tempCombo) > Math.abs(combo)) {
                 combo = tempCombo;
             }
+            score += tempCombo;
         }
         // checks from increasing row and decreasing height, diagonally with decreasing row and increasing height
         if (diagHeightRightLeftRow > 3) {
             tempCombo = aboveBehind(grid, row, column, height, 0, player);
-            tempCombo = belowFront(grid, row, column, height, tempCombo, player);
+            tempCombo = belowFront(grid, row, column, height, Math.abs(tempCombo), player);
 
             if (Math.abs(tempCombo) > Math.abs(combo)) {
                 combo = tempCombo;
             }
+            score += tempCombo;
         }
         // checks from increasing columns and decreasing height, diagonally with decreasing columns and increasing height
         if (diagHeightRightLeftCol > 3) {
             tempCombo = aboveLeft(grid, row, column, height, 0, player);
-            tempCombo = belowRight(grid, row, column, height, tempCombo, player);
+            tempCombo = belowRight(grid, row, column, height, Math.abs(tempCombo), player);
 
             if (Math.abs(tempCombo) > Math.abs(combo)) {
                 combo = tempCombo;
             }
+            score += tempCombo;
         }
         // checks from increasing columns and height, diagonally with decreasing columns and height
         if (diagHeightLeftRightCol > 3) {
             tempCombo = aboveRight(grid, row, column, height, 0, player);
-            tempCombo = belowLeft(grid, row, column, height, tempCombo, player);
+            tempCombo = belowLeft(grid, row, column, height, Math.abs(tempCombo), player);
 
             if (Math.abs(tempCombo) > Math.abs(combo)) {
                 combo = tempCombo;
             }
+            score += tempCombo;
         }
-
+        scoreCombo[0] = score;
+        scoreCombo[1] = combo;
         //highest combination has been found, subtract the extra value from the initial spot
-        return combo-1;
+        return scoreCombo;
 
     }
 
+    //*****************************METHODS TO DETERMINE DIAGONAL LENGTHS**************************************************
     /**
      * Checks for the diagonal length from top right to bottom left from a specific point
      * @author Albert Quon
@@ -637,7 +748,7 @@ class Score4 {
     // RECURSIVE HELPER METHODS
     //************************************* START OF WIN CHECKING RECURSIVE METHODS********************************
 
-
+    // recursive methods were made to organize and specify each direction
     /**
      * Determines if there's a four in a row in a specific row through recursion
      * @author Albert Quon
@@ -959,7 +1070,6 @@ class Score4 {
      * @param playerType Player combination to specifically search for
      * @return The score of the move and highest combination found
      */
-
     static int up(int[][][] grid, int row, int column, int height, int combo, int playerType) {
 
         if (row < 0) {
@@ -967,8 +1077,8 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return up(grid, row-1, column, height, combo+1, playerType);
@@ -991,8 +1101,8 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return down(grid, row+1, column, height, combo+1, playerType);
@@ -1016,8 +1126,8 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return left(grid, row, column-1, height, combo+1, playerType);
@@ -1041,13 +1151,13 @@ class Score4 {
         if (grid[height][row][column] != playerType) {
 
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return right(grid, row, column+1, height, combo+1, playerType);
     }
-    
+
     /**
      * Recursively checks for combinations through diagonally in decreasing rows and columns
      * @author Albert Quon
@@ -1065,8 +1175,8 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return upLeft(grid, row-1, column-1, height, combo+1, playerType);
@@ -1089,8 +1199,8 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return upRight(grid, row-1, column+1, height, combo+1, playerType);
@@ -1114,8 +1224,8 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return downLeft(grid, row+1, column-1, height, combo+1, playerType);
@@ -1139,8 +1249,8 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return downRight(grid, row+1, column+1, height, combo+1, playerType);
@@ -1170,13 +1280,13 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return above(grid, row, column, height+1, combo+1, playerType);
     }
-    
+
     /**
      * Recursively checks for combinations diagonally through increasing height and decreasing rows
      * @param grid Current Game State
@@ -1193,8 +1303,8 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return aboveFront(grid, row-1, column, height+1, combo+1, playerType);
@@ -1217,8 +1327,8 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return aboveBehind(grid, row+1, column, height+1, combo+1, playerType);
@@ -1241,8 +1351,8 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return aboveLeft(grid, row, column-1, height+1, combo+1, playerType);
@@ -1265,8 +1375,8 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return aboveRight(grid, row, column+1, height+1, combo+1, playerType);
@@ -1289,8 +1399,8 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return aboveFrontLeft(grid, row-1, column-1, height+1, combo+1, playerType);
@@ -1312,8 +1422,8 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return aboveFrontRight(grid, row-1, column+1, height+1, combo+1, playerType);
@@ -1335,8 +1445,8 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return aboveBehindLeft(grid, row+1, column-1, height+1, combo+1, playerType);
@@ -1358,15 +1468,15 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return aboveBehindRight(grid, row+1, column+1, height+1, combo+1, playerType);
     }
 
     /**
-     * Recursively checks for combinations through decreasing height 
+     * Recursively checks for combinations through decreasing height
      * @param grid Current Game State
      * @param row The current row
      * @param column  The current column
@@ -1381,7 +1491,7 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
             }
             return combo*playerType;
         }
@@ -1405,7 +1515,7 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
             }
             return combo*playerType;
         }
@@ -1429,8 +1539,8 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return belowBehind(grid, row+1, column, height-1, combo+1, playerType);
@@ -1453,8 +1563,8 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return belowLeft(grid, row, column-1, height-1, combo+1, playerType);
@@ -1476,8 +1586,8 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return belowRight(grid, row, column+1, height-1, combo+1, playerType);
@@ -1500,8 +1610,8 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return belowFrontLeft(grid, row-1, column-1, height-1, combo+1, playerType);
@@ -1523,8 +1633,8 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return belowFrontRight(grid, row-1, column+1, height-1, combo+1, playerType);
@@ -1546,8 +1656,8 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return belowBehindLeft(grid, row+1, column-1, height-1, combo+1, playerType);
@@ -1569,8 +1679,8 @@ class Score4 {
         }
         if (grid[height][row][column] != playerType) {
             if (playerType == playerType*(-1)) {
-                combo = 0; // combo will not be considered since it's not possible for a win
-            } 
+                combo = 0; // combo will not be considered since it's not possible for a win (other player blocks the possibility) (other player blocks the possibility)
+            }
             return combo*playerType;
         }
         return belowBehindRight(grid, row+1, column+1, height-1, combo+1, playerType);
@@ -1578,6 +1688,6 @@ class Score4 {
 
 
 
-/**********************END OF RECURSIVE HELPER METHODS********************************/
+//**********************END OF RECURSIVE HELPER METHODS********************************
 
 }
